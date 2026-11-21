@@ -1076,7 +1076,7 @@ class DashSearch(unittest.TestCase):
 
 class DummyData(unittest.TestCase):
     def setUp(self):
-        self.st, self.db, self.svc, self.au, *_ = stack(dev_mode=True, dummy_data_email='dummy@x.in'); self.u, _ = register(self.au, email='dummy@x.in', mobile='9123456770', pan='ABCPD7777D')
+        self.st, self.db, self.svc, self.au, *_ = stack(dev_mode=True, dummy_data_email=('dummy@x.in',)); self.u, _ = register(self.au, email='dummy@x.in', mobile='9123456770', pan='ABCPD7777D')
         self.other, _ = register(self.au, email='real@x.in', mobile='9123456771', pan='ABCPE7777E')
     def test_table_filled_without_searching_and_max_ten(self):
         r = self.svc.me(self.au._get(self.u['id'])); n = len(r['likely']) + len(r['possible']); self.assertTrue(r['sample']); self.assertTrue(1 <= n <= 10)
@@ -1091,7 +1091,7 @@ class DummyData(unittest.TestCase):
         r = self.svc.me(self.au._get(self.other['id'])); self.assertFalse(r['sample']); self.assertEqual(self.db.one('SELECT COUNT(*) n FROM lists WHERE file_hash LIKE ?', ('dummy:%d:%%' % self.other['id'],))['n'], 0)
     def test_off_unless_dev_mode(self):
         os.environ['DUMMY_DATA_EMAIL'] = 'dummy@x.in'; os.environ.pop('DEV_MODE', None)
-        try: self.assertEqual(Settings().dummy_data_email, '')
+        try: self.assertEqual(Settings().dummy_data_email, ())
         finally: os.environ.pop('DUMMY_DATA_EMAIL')
 
 
@@ -1104,6 +1104,50 @@ class NoBackAfterSignout(unittest.TestCase):
         b''.join(W.application({'REQUEST_METHOD': 'GET', 'PATH_INFO': '/dashboard.html', 'QUERY_STRING': '', 'wsgi.input': io.BytesIO(b''), 'CONTENT_LENGTH': '0', 'SERVER_NAME': 'x', 'SERVER_PORT': '80', 'REMOTE_ADDR': '127.0.0.1', 'wsgi.url_scheme': 'http'}, sr))
         self.assertIn('no-store', got['h']['Cache-Control'])
 
+
+
+class SupportTests(unittest.TestCase):
+    def setUp(self):
+        self.st, self.db, self.svc, _ = mk()
+        from support import Support
+        self.sp = Support(self.svc)
+    def ok(self, **kw):
+        d = {'name': 'Asha Rao', 'email': 'asha@x.in', 'message': 'My match looks wrong, please check.', 'topic': 'A match looks wrong'}; d.update(kw); return d
+    def test_contact_saved_with_reference(self):
+        r = self.sp.submit('contact', self.ok()); self.assertTrue(r['ref'].startswith('DK-'))
+        m = self.sp.admin_messages()['messages'][0]; self.assertEqual((m['kind'], m['status'], m['email']), ('contact', 'new', 'asha@x.in'))
+    def test_validation(self):
+        for bad, frag in (({'name': ''}, 'name'), ({'email': 'nope'}, 'email'), ({'message': 'short'}, 'more')):
+            with self.assertRaises(ApiError) as c: self.sp.submit('contact', self.ok(**bad))
+            self.assertIn(frag, c.exception.msg.lower())
+    def test_honeypot_stores_nothing(self):
+        self.sp.submit('contact', self.ok(website='http://spam')); self.assertEqual(self.sp.admin_messages()['messages'], [])
+    def test_feedback_rating_and_average(self):
+        self.sp.submit('feedback', self.ok(rating=4, topic='Praise')); self.sp.submit('feedback', self.ok(email='b@x.in', rating=2))
+        self.assertEqual(self.sp.admin_messages(kind='feedback')['avg_rating'], 3.0)
+        with self.assertRaises(ApiError): self.sp.submit('feedback', self.ok(rating=9))
+    def test_unknown_topic_falls_back(self):
+        self.sp.submit('contact', self.ok(topic='<script>')); self.assertEqual(self.sp.admin_messages()['messages'][0]['topic'], 'Something else')
+    def test_per_email_hourly_limit(self):
+        for i in range(5): self.sp.submit('contact', self.ok())
+        with self.assertRaises(ApiError) as c: self.sp.submit('contact', self.ok())
+        self.assertEqual(c.exception.code, 429)
+    def test_admin_status_update(self):
+        self.sp.submit('contact', self.ok()); mid = self.sp.admin_messages()['messages'][0]['id']
+        self.sp.admin_message_update(mid, 'resolved', 'replied'); self.assertEqual(self.sp.admin_messages(status='resolved')['messages'][0]['admin_note'], 'replied')
+        with self.assertRaises(ApiError): self.sp.admin_message_update(mid, 'bogus', '')
+    def test_site_info_hides_nothing_secret(self):
+        i = self.sp.site_info(); self.assertIn('Something else', i['topics']); self.assertNotIn('admin_token', i)
+    def test_admin_list_and_record_delete(self):
+        ls = self.sp.admin_lists()['lists']; self.assertTrue(ls); recs = self.sp.admin_records()['records']; self.assertTrue(recs)
+        self.sp.admin_record_delete(recs[0]['id']); self.assertEqual(len(self.sp.admin_records()['records']), len(recs) - 1)
+        r = self.sp.admin_list_delete(ls[0]['id']); self.assertEqual(self.sp.admin_records()['records'], []); self.assertGreaterEqual(r['records_removed'], 0)
+        with self.assertRaises(ApiError): self.sp.admin_list_delete(ls[0]['id'])
+    def test_admin_users_search_and_delete(self):
+        st, db, svc, au, *_ = stack(); r = au.signup(payload()); from support import Support; sp = Support(svc)
+        us = sp.admin_users('a@x.in')['users']; self.assertEqual(len(us), 1); sp.admin_user_delete(us[0]['id']); self.assertEqual(sp.admin_users('a@x.in')['users'], [])
+    def test_gateway_status_in_stats(self):
+        g = self.svc.admin_stats()['gateway']; self.assertEqual(set(g), {'provider', 'razorpay_keys', 'razorpay_webhook', 'upi', 'dev_mode'})
 
 if __name__ == '__main__':
     unittest.main(verbosity=1)

@@ -259,3 +259,15 @@ table.mt{min-width:980px}
 
 .hide{display:none!important}
 #prevbar{background:var(--gold);color:var(--night);text-align:center;font-size:14px;padding:8px 14px;position:sticky;top:0;z-index:80}
+
+.ab-hero,.ct-hero{padding:34px 0 10px;max-width:760px}.ab-hero h1,.ct-hero h1{font-size:clamp(30px,5vw,46px)}
+.ab-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0 10px}.ab-stats div{background:var(--night);color:#fff;border-radius:14px;padding:18px 20px}.ab-stats b{display:block;font:400 clamp(24px,4vw,34px)/1.1 var(--hf);color:var(--gold)}.ab-stats span{font-size:14px;opacity:.85}
+.ab-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.ab-3 .card{margin:0}
+.ab-team{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.person{display:flex;gap:16px;align-items:flex-start;margin:0}.person h3{margin:0}.person .role{margin:2px 0 8px;color:var(--mut);font-size:14px}.person p:last-child{margin:0}
+.av{flex:none;width:64px;height:64px;border-radius:50%;background:var(--g);color:#fff;display:grid;place-items:center;font:400 22px var(--hf)}.av.alt{background:var(--mint)}
+.ct-chan{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:14px 0}.ct-chan .card{margin:0}.ct-chan h3{font-size:16px;margin-bottom:6px}.ct-chan p{margin:0 0 4px;word-break:break-word}
+.ct-grid{display:grid;grid-template-columns:3fr 2fr;gap:18px;align-items:start}.ct-grid .card{margin:0 0 14px}
+.fb{max-width:680px}.stars{border:0;padding:0;margin:0 0 12px}.stars legend{font-weight:600;margin-bottom:6px}
+.star{background:none;color:#B9C0DA;border:0;padding:0 2px;font-size:34px;line-height:1;cursor:pointer}.star:hover{background:none;color:var(--gold)}.star.on{color:var(--gold)}
+@media(max-width:760px){.ab-3,.ab-team,.ct-grid,.ab-stats{grid-template-columns:1fr}}
+.atabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px;border-bottom:1px solid var(--line);padding-bottom:10px}.at{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:14px}.at:hover{background:var(--soft)}.at.on{background:var(--g);color:#fff;border-color:var(--g)}

@@ -1,0 +1,1 @@
+api('/api/stats').then(s=>{const n=x=>Number(x||0).toLocaleString('en-IN');$('#s1').textContent=n(s.companies_covered);$('#s2').textContent=n(s.records);$('#s3').textContent=inr(s.amount)}).catch(()=>{});

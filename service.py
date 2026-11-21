@@ -316,7 +316,7 @@ class Service:
         modes = {x for x in (modes or []) if x in ('pan', 'ids', 'name', 'address')}
         if not modes:
             raise ApiError('Tick at least one thing to search with.')
-        if self.st.dummy_data_email and (u['email'] or '').lower() == self.st.dummy_data_email:
+        if (u['email'] or '').lower() in self.st.dummy_data_email:
             return self._dummy_search(u, modes)
         pan = self.vault.open(u['pan_enc']) if u['pan_enc'] else ''
         folios = json.loads(u['folios'] or '[]')
@@ -346,7 +346,7 @@ class Service:
 
     def me(self, u):
         """Dashboard data. Entries for companies outside the user's free slots / paid plan are returned only as a count and an amount band."""
-        dummy = bool(self.st.dummy_data_email and (u['email'] or '').lower() == self.st.dummy_data_email)
+        dummy = (u['email'] or '').lower() in self.st.dummy_data_email
         if dummy and not self.db.one("SELECT 1 FROM lists WHERE file_hash LIKE ?", ('dummy:%d:%%' % u['id'],)):
             return self._dummy_search(u, [])
         self.allocate(u['id'])
@@ -568,6 +568,10 @@ class Service:
         s['payments_pending_review'] = self.db.one("SELECT COUNT(*) n FROM payments WHERE status='pending_review'")['n']
         s['revenue_inr'] = round((self.db.one("SELECT COALESCE(SUM(amount_paise),0) n FROM payments WHERE status='paid'")['n'] or 0) / 100, 2)
         s['matches'] = self.db.one('SELECT COUNT(*) n FROM matches')['n']
+        s['messages_new'] = self.db.one("SELECT COUNT(*) n FROM messages WHERE status='new'")['n']
+        stt = self.st
+        s['gateway'] = {'provider': stt.pay_provider or 'off', 'razorpay_keys': bool(stt.razorpay_key_id and stt.razorpay_key_secret),
+                        'razorpay_webhook': bool(stt.razorpay_webhook_secret), 'upi': bool(stt.upi_vpa), 'dev_mode': bool(stt.dev_mode)}
         s['outbox'] = {r['status']: r['n'] for r in self.db.q('SELECT status, COUNT(*) n FROM outbox GROUP BY status')}
         s['recent_lists'] = [dict(r) for r in self.db.q('SELECT l.id, c.name company, c.id cid, l.fy, l.dtype, l.n_rows, l.total, l.iepf_due, l.ingested_at FROM lists l JOIN companies c ON c.id=l.company_id ORDER BY l.id DESC LIMIT 15')]
         s['failed_messages'] = [dict(r) for r in self.db.q("SELECT id, channel, kind, err, tries FROM outbox WHERE status!='sent' AND err IS NOT NULL ORDER BY id DESC LIMIT 10")]

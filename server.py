@@ -27,6 +27,7 @@ from notify import Notifier
 from auth import Auth
 from billing import Billing
 from claims import Claims
+from support import Support
 from service import ApiError, Service
 
 log = logging.getLogger('dhankhoj')
@@ -64,6 +65,7 @@ def make_handler(svc, st, rl):
     cl = Claims(svc)
     au = Auth(svc)
     bl = Billing(svc)
+    sp = Support(svc)
     COOKIE = '__Host-dk' if st.secure_cookies else 'dk_session'
 
     class H(BaseHTTPRequestHandler):
@@ -257,6 +259,20 @@ def make_handler(svc, st, rl):
                     return self.json({'ok': True, 'payments': bl.history(self.user())})
                 if u.path == '/api/pay/receipt':
                     return self.json({'ok': True, **bl.receipt(self.user(), int((q.get('id') or ['0'])[0]))})
+                if u.path == '/api/site-info':
+                    return self.json({'ok': True, **sp.site_info()})
+                if u.path == '/api/admin/messages':
+                    self.admin()
+                    return self.json({'ok': True, **sp.admin_messages((q.get('status') or [''])[0], (q.get('kind') or [''])[0])})
+                if u.path == '/api/admin/users':
+                    self.admin()
+                    return self.json({'ok': True, **sp.admin_users((q.get('q') or [''])[0])})
+                if u.path == '/api/admin/lists':
+                    self.admin()
+                    return self.json({'ok': True, **sp.admin_lists((q.get('q') or [''])[0])})
+                if u.path == '/api/admin/records':
+                    self.admin()
+                    return self.json({'ok': True, **sp.admin_records((q.get('q') or [''])[0], (q.get('company') or [''])[0])})
                 if u.path == '/api/admin/claims':
                     self.admin()
                     return self.json({'ok': True, 'claims': cl.admin_list(), 'experts': cl.admin_experts()})
@@ -413,11 +429,31 @@ def make_handler(svc, st, rl):
                     usr = self.vuser()
                     d = self.body_json()
                     return self.json({'ok': True, **bl.upi_submit(usr, int(d.get('payment_id', 0)), d.get('utr', ''))})
+                if u.path in ('/api/contact', '/api/feedback'):
+                    self.limit('msg:' + ip, 10, 3600, 'Too many messages from this connection. Please try again later.')
+                    try:
+                        usr = au.user_for(self.session_token())
+                    except Exception:
+                        usr = None
+                    return self.json({'ok': True, **sp.submit(u.path.rsplit('/', 1)[1], self.body_json(), usr)})
                 # ---- experts
                 if u.path == '/api/expert/register':
                     self.limit('ex:' + ip, 5, 3600)
                     return self.json(cl.register_expert(self.body_json()))
                 # ---- admin
+                if u.path == '/api/admin/message/update':
+                    self.admin()
+                    d = self.body_json()
+                    return self.json(sp.admin_message_update(int(d.get('id', 0)), d.get('status', ''), d.get('note', '')))
+                if u.path == '/api/admin/user/delete':
+                    self.admin()
+                    return self.json(sp.admin_user_delete(int(self.body_json().get('id', 0))))
+                if u.path == '/api/admin/list/delete':
+                    self.admin()
+                    return self.json(sp.admin_list_delete(int(self.body_json().get('id', 0))))
+                if u.path == '/api/admin/record/delete':
+                    self.admin()
+                    return self.json(sp.admin_record_delete(int(self.body_json().get('id', 0))))
                 if u.path == '/api/admin/claim/update':
                     self.admin()
                     d = self.body_json()

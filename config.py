@@ -44,7 +44,7 @@ class Settings:
         self.port = int(env('PORT', '8080'))
         self.admin_token = env('ADMIN_TOKEN', '')
         self.dev_mode = flag('DEV_MODE', False)  # DEV_MODE=1 returns OTPs in the API response (never in production)
-        self.dummy_data_email = env('DUMMY_DATA_EMAIL', '').strip().lower() if flag('DEV_MODE', False) else ''  # local demo only: Search shows random sample rows for this account
+        self.dummy_data_email = tuple(e.strip().lower() for e in env('DUMMY_DATA_EMAIL', '').split(',') if e.strip()) if flag('DEV_MODE', False) else ()  # comma-separated  # local demo only: Search shows random sample rows for this account
         self.skip_email_verify = flag('SKIP_EMAIL_VERIFY', False) and self.dev_mode  # local demo only: new accounts are treated as email-verified
         self.trust_proxy = flag('TRUST_PROXY', False)
         self.worker_interval = int(env('WORKER_INTERVAL', '120'))  # seconds; 0 disables the in-process worker
@@ -75,6 +75,10 @@ class Settings:
         self.business_name = env('BUSINESS_NAME', 'DhanKhoj')
         self.gstin = env('GSTIN', '')
         self.support_email = env('SUPPORT_EMAIL', '')
+        self.support_phone = env('SUPPORT_PHONE', '')          # shown on the Contact page, e.g. +91 98765 43210
+        self.support_whatsapp = env('SUPPORT_WHATSAPP', '')    # digits only with country code, e.g. 919876543210 (makes a WhatsApp chat link)
+        self.support_hours = env('SUPPORT_HOURS', 'Mon-Sat, 10:00 to 18:00 IST')
+        self.office_address = env('OFFICE_ADDRESS', '')
         # payments: pay_provider = '' (off) | mock (needs DEV_MODE) | razorpay.   UPI direct needs UPI_VPA.
         self.pay_provider = env('PAY_PROVIDER', '').lower()
         self.razorpay_key_id = env('RAZORPAY_KEY_ID')

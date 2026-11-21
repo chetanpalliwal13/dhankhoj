@@ -19,7 +19,7 @@ async function session(){if(!ME.loaded){try{ME.user=(await api('/api/session')).
 async function requireLogin(){const u=await session();if(!u){location.replace('/signin.html?next='+encodeURIComponent(location.pathname+location.search));return null}return u}
 function safeNext(){const n=new URLSearchParams(location.search).get('next')||'';return /^\/[A-Za-z0-9_\-.\/?=&%]*$/.test(n)&&!n.startsWith('//')?n:'/dashboard.html'}
 function initials(n){const p=String(n||'?').trim().split(/\s+/);return ((p[0]||'?')[0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase()}
-const MENU=[['/dashboard.html','Dashboard'],['/account.html#profile','Profile'],['/account.html#identity','PAN &amp; demat IDs'],['/account.html#alerts','Alerts'],['/account.html#plan','Plan &amp; payments'],['/account.html#security','Security']];
+const MENU=[['/dashboard.html','Dashboard'],['/account.html#profile','Profile'],['/account.html#identity','PAN &amp; demat IDs'],['/account.html#alerts','Alerts'],['/account.html#plan','Plan &amp; payments'],['/account.html#security','Security'],['/contact.html','Help &amp; support']];
 async function buildNav(){const n=document.getElementById('nav');if(!n)return;const u=await session();
   n.querySelectorAll('.keep').forEach(a=>a.remove());
   if(!u){n.insertAdjacentHTML('beforeend','<a class="keep" href="/signin.html">Sign in</a><a class="keep" href="/signup.html">Sign up free</a>');return}
@@ -60,3 +60,6 @@ if(!document.getElementById('lmod'))initGoogle();
 
 // Back / forward button after sign-out: a page restored from the browser's memory is re-checked, so signed-out visitors never see account pages
 window.addEventListener('pageshow',e=>{if(e.persisted)location.reload()});
+
+// ---- footer: About / Contact / Feedback links on every page
+(function(){const f=document.querySelector('footer .wrap');if(f&&!f.querySelector('a[href="/contact.html"]'))f.insertAdjacentHTML('beforeend',' - <a href="/about.html">About</a> - <a href="/contact.html">Contact &amp; support</a> - <a href="/feedback.html">Feedback</a>')})();

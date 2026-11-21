@@ -61,6 +61,10 @@ CREATE TABLE IF NOT EXISTS payments(
   status TEXT DEFAULT 'created', provider_order_id TEXT, provider_payment_id TEXT, utr TEXT, plan_days INTEGER, receipt_no TEXT, note TEXT,
   created_at TEXT, paid_at TEXT, reviewed_at TEXT);
 CREATE INDEX IF NOT EXISTS idx_pay_user ON payments(user_id);
+CREATE TABLE IF NOT EXISTS messages(
+  id INTEGER PRIMARY KEY, kind TEXT, ref TEXT, user_id INTEGER, name TEXT, email TEXT, phone TEXT, topic TEXT, rating INTEGER, body TEXT,
+  status TEXT DEFAULT 'new', admin_note TEXT, created_at TEXT, updated_at TEXT);
+CREATE INDEX IF NOT EXISTS idx_msg_status ON messages(status);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_pay_order ON payments(provider_order_id) WHERE provider_order_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_pay_utr ON payments(utr) WHERE utr IS NOT NULL;
 
