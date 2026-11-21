@@ -15,11 +15,14 @@ function err(msg,need,status){const e=new Error(msg);e.need=need;e.status=status
 function nameFrom(email){const base=email.split('@')[0].replace(/[0-9]+$/,'').replace(/[._-]+/g,' ').trim();if(/^chetanpalliwal/i.test(email))return['Chetan','Palliwal'];const p=base.split(' ');const cap=s=>s?s[0].toUpperCase()+s.slice(1):'';return[cap(p[0])||'Demo',cap(p[1])||'User']}
 const SEED={'dhankhojuser@gmail.com':{pw:'Test@123',first:'Dhankhoj',last:'User',pan:'ABCPK1234L',folios:['IN30123456789012'],address:'12 MG Road',city:'Pune',state:'Maharashtra',pincode:'411001'}};
 function newUser(email,first,last,mobile){const sd=SEED[email];if(sd)return{email,first_name:sd.first,middle_name:'',last_name:sd.last,mobile:'9876543212',pan:sd.pan,folios:sd.folios,aliases:[],address:sd.address,city:sd.city,state:sd.state,pincode:sd.pincode,dob:'',father_name:'',alt_mobile:'',lang:'',channels:{email:true,sms:false,whatsapp:false},since:new Date().toISOString(),seen:Date.now()};return{email,first_name:first,middle_name:'',last_name:last,mobile:mobile||'9876543211',pan:/^chetanpalliwal/i.test(email)?'ABCPP1234F':'',folios:[],aliases:[],address:'',city:'',state:'',pincode:'400001',dob:'',father_name:'',alt_mobile:'',lang:'',channels:{email:true,sms:false,whatsapp:false},since:new Date().toISOString(),seen:Date.now()}}
+const TIERS={silver:['Silver',25,true,false],gold:['Gold',100,true,true],platinum:['Platinum',null,true,true]};
+function planOf(u){const p=u&&u.plan;if(!p||!p.until||p.until<new Date().toISOString().slice(0,10))return FREE;const t=TIERS[p.tier];return{active:true,tier:p.tier,label:t[0],until:p.until,expired_on:null,companies:t[1],sms:t[2],whatsapp:t[3],free_companies:5}}
+function curOf(u){const p=planOf(u);return p.active?{tier:p.tier,label:p.label,active:true,until:p.until,days_left:Math.max(0,Math.round((new Date(p.until)-Date.now())/864e5))}:PLAN.current}
 function user(){const s=ST();return s.user||null}
 function need(){const u=user();if(!u)throw err('Please sign in to continue.','login',401);return u}
 const fullName=u=>[u.first_name,u.middle_name,u.last_name].filter(Boolean).join(' ');
-function sessionInfo(u){return{first_name:u.first_name,name:fullName(u),email:mkMail(u.email),email_verified:true,phone_verified:false,plan:FREE,idle_min:5}}
-function profile(u){return{first_name:u.first_name,middle_name:u.middle_name,last_name:u.last_name,email:u.email,mobile:u.mobile,pan_set:!!u.pan,pan_masked:u.pan?'XXXXXX'+u.pan.slice(-4):'',pan_ok:true,dob:u.dob,father_name:u.father_name,address:u.address,city:u.city,state:u.state,pincode:u.pincode,alt_mobile:u.alt_mobile,lang:u.lang,folios:u.folios,max_dp:5,plan:FREE,aliases:u.aliases,email_verified:true,phone_verified:false,channels:u.channels,member_since:u.since,states:OPTS.states,langs:OPTS.langs}}
+function sessionInfo(u){return{first_name:u.first_name,name:fullName(u),email:mkMail(u.email),email_verified:true,phone_verified:false,plan:planOf(u),idle_min:5}}
+function profile(u){return{first_name:u.first_name,middle_name:u.middle_name,last_name:u.last_name,email:u.email,mobile:u.mobile,pan_set:!!u.pan,pan_masked:u.pan?'XXXXXX'+u.pan.slice(-4):'',pan_ok:true,dob:u.dob,father_name:u.father_name,address:u.address,city:u.city,state:u.state,pincode:u.pincode,alt_mobile:u.alt_mobile,lang:u.lang,folios:u.folios,max_dp:5,plan:planOf(u),aliases:u.aliases,email_verified:true,phone_verified:false,channels:u.channels,member_since:u.since,states:OPTS.states,langs:OPTS.langs}}
 function rows(u,modes){const n=ri(6,10),out=[],nm=(u.first_name+' '+u.last_name).toUpperCase(),cos=[...CO].sort(()=>Math.random()-.5).slice(0,ri(2,5)),streets=['MG ROAD','STATION ROAD','GANDHI NAGAR','LAKE VIEW COLONY','SUNRISE APARTMENTS','MARKET YARD'],cities=['MUMBAI','PUNE','DELHI','BENGALURU','CHENNAI','JAIPUR'];
   const labels={pan:['PAN','high'],ids:['DP-Client ID','high'],name:['Name + PIN','medium'],address:['Address','low']};
   const pool=(modes&&modes.length?modes:['pan','ids','name']).filter(m=>labels[m]);
@@ -31,12 +34,12 @@ function rows(u,modes){const n=ri(6,10),out=[],nm=(u.first_name+' '+u.last_name)
   return out}
 function dash(u,modes){const all=rows(u,modes),likely=all.filter(r=>r.confidence!=='low'),possible=all.filter(r=>r.confidence==='low').map(r=>({...r,amount:null}));
   return{sample:true,profile:{name:fullName(u),first_name:u.first_name,email:mkMail(u.email),phone:'+91*****'+String(u.mobile).slice(-2),since:u.since,pan_masked:u.pan?'XXXXXX'+u.pan.slice(-4):null,ids:u.folios.map(mask),has_address:!!((u.address||u.city)&&u.pincode)},
-   plan:{...FREE,used:new Set(likely.map(r=>r.company)).size},needs_pan:!u.pan,dp_count:u.folios.length,likely,possible,total_likely:Math.round(likely.reduce((a,r)=>a+(r.amount||0),0)*100)/100,locked:{companies:0,entries:0,likely_entries:0,amount_band:null},claims:[]}}
+   plan:{...planOf(u),used:new Set(likely.map(r=>r.company)).size},needs_pan:!u.pan,dp_count:u.folios.length,likely,possible,total_likely:Math.round(likely.reduce((a,r)=>a+(r.amount||0),0)*100)/100,locked:{companies:0,entries:0,likely_entries:0,amount_band:null},claims:[]}}
 const NA=m=>{throw err(m||'This is a preview with sample data, so this action is not available here.')};
 const H={
  'GET /api/session':()=>({user:user()?sessionInfo(user()):null}),
  'GET /api/auth/options':()=>({google:false}),
- 'GET /api/plan':()=>PLAN,
+ 'GET /api/plan':()=>({...PLAN,current:user()?curOf(user()):PLAN.current}),
  'GET /api/stats':()=>({companies_covered:3,records:3606,amount:3592258.5,last_ingest_at:new Date().toISOString(),subscribers:2}),
  'GET /api/form-options':()=>({states:OPTS.states,langs:OPTS.langs}),
  'GET /api/claim-info':()=>({fee_text:'The expert sends you a written fee quote before any work starts. You can decline at no cost.',experts:[]}),
@@ -62,13 +65,20 @@ const H={
    for(const k of ['first_name','middle_name','last_name','dob','father_name','address','city','state','pincode','lang'])if(b[k]!==undefined)u[k]=String(b[k]);if(b.mobile!==undefined)u.mobile=String(b.mobile).replace(/\D/g,'').slice(-10);if(b.alt_mobile!==undefined)u.alt_mobile=String(b.alt_mobile).replace(/\D/g,'').slice(-10);
    if(b.aliases!==undefined)u.aliases=b.aliases.slice(0,3);const s=ST();SAVE({...s,user:u,accounts:{...(s.accounts||{}),[u.email]:u}});return profile(u)},
  'POST /api/account/channels':b=>{const u=need();if((b.channels.sms||b.channels.whatsapp))throw err('SMS and WhatsApp need a verified mobile number and a paid plan. Not available in the preview.');u.channels={email:!!b.channels.email,sms:false,whatsapp:false};const s=ST();SAVE({...s,user:u});return{channels:u.channels}},
- 'GET /api/account/payments':()=>{need();return{payments:[]}},
+ 'POST /api/pay/order':b=>{const u=need(),t=PLAN.tiers.find(x=>x.key===b.tier);if(!t)throw err('Choose a plan.');const per=b.period==='monthly'?'monthly':'yearly',amt=per==='yearly'?t.yearly:t.monthly,s=ST(),pays=u.payments||(u.payments=[]);
+   const p={id:pays.length+1,tier:t.key,period:per,amount:amt,days:per==='yearly'?365:30,status:'created'};pays.push(p);SAVE({...s,user:u,accounts:{...(s.accounts||{}),[u.email]:u}});return{provider:'mock',payment_id:p.id}},
+ 'POST /api/pay/mock-confirm':b=>{const u=need(),p=(u.payments||[]).find(x=>x.id===+b.payment_id);if(!p)throw err('Payment not found.',undefined,404);if(p.status!=='paid'){const today=new Date().toISOString().slice(0,10),base=(u.plan&&u.plan.until>today)?new Date(u.plan.until):new Date(),e=new Date(base.getTime()+p.days*864e5);
+   p.status='paid';p.date=today;p.receipt_no='DK-PREVIEW-'+String(p.id).padStart(4,'0');p.method='test';u.plan={tier:p.tier,until:e.toISOString().slice(0,10)};const s=ST();SAVE({...s,user:u,accounts:{...(s.accounts||{}),[u.email]:u}})}return{paid:true}},
+ 'GET /api/account/payments':()=>{const u=need();return{payments:(u.payments||[]).filter(p=>p.status==='paid').reverse().map(p=>({id:p.id,receipt_no:p.receipt_no,amount:p.amount,status:'paid',method:'test',date:p.date,days:p.days,item:TIERS[p.tier][0]+' ('+p.period+')',note:null}))}},
+ 'GET /api/pay/receipt':(b,q)=>{const u=need(),p=(u.payments||[]).find(x=>x.id===+new URLSearchParams(q).get('id')&&x.status==='paid');if(!p)throw err('No receipt for this payment.',undefined,404);const g=18,base=Math.round(p.amount/1.18*100)/100;
+   return{receipt_no:p.receipt_no,date:p.date,billed_to:fullName(u),email:u.email,item:TIERS[p.tier][0]+' membership ('+p.period+')',plan_days:p.days,amount:p.amount,taxable:base,gst_percent:g,gst:Math.round((p.amount-base)*100)/100,method:'test (preview)',reference:'preview-'+p.id,seller:'DhanKhoj (sample receipt, not a tax invoice)',gstin:'',valid_until:u.plan&&u.plan.until}},
+
  'POST /api/account/password':()=>{need();return{}},
  'POST /api/account/delete':()=>{SAVE({});return{}},
 };
-window.demoApi=async function(path,body){const method=body===undefined?'GET':'POST',p=path.split('?')[0],f=H[method+' '+p];
-  if(!f){if(p.startsWith('/api/pay')||p.startsWith('/api/me/claim')||p.startsWith('/api/expert')||p.startsWith('/api/account/phone'))NA();throw err('Not available in the preview.')}
-  await new Promise(r=>setTimeout(r,150));return{ok:true,...f(body||{})}};
+window.demoApi=async function(path,body){const method=body===undefined?'GET':'POST',p=path.split('?')[0],qs=path.split('?')[1]||'',f=H[method+' '+p];
+  if(!f){if(p.startsWith('/api/pay/upi')||p.startsWith('/api/me/claim')||p.startsWith('/api/expert')||p.startsWith('/api/account/phone'))NA();throw err('Not available in the preview.')}
+  await new Promise(r=>setTimeout(r,150));return{ok:true,...f(body||{},qs)}};
 function banner(){if(document.getElementById('prevbar'))return;const d=document.createElement('div');d.id='prevbar';d.setAttribute('role','status');d.innerHTML='<b>Preview with sample data.</b> Nothing here is real, saved on a server, or sent. Try the demo account dhankhojuser@gmail.com with password Test@123, or any other email and password. The full app runs on our server.';document.body.insertBefore(d,document.body.firstChild)}
 if(document.body)banner();else document.addEventListener('DOMContentLoaded',banner);
 })();
