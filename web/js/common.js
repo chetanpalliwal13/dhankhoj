@@ -14,10 +14,21 @@ const ME={loaded:false,user:null};
 async function session(){if(!ME.loaded){try{ME.user=(await api('/api/session')).user}catch(e){ME.user=null}ME.loaded=true}return ME.user}
 async function requireLogin(){const u=await session();if(!u){location.replace('/signin.html?next='+encodeURIComponent(location.pathname+location.search));return null}return u}
 function safeNext(){const n=new URLSearchParams(location.search).get('next')||'';return /^\/[A-Za-z0-9_\-.\/?=&%]*$/.test(n)&&!n.startsWith('//')?n:'/dashboard.html'}
+function initials(n){const p=String(n||'?').trim().split(/\s+/);return ((p[0]||'?')[0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase()}
+const MENU=[['/dashboard.html','Dashboard'],['/account.html#profile','Profile'],['/account.html#identity','PAN &amp; demat IDs'],['/account.html#alerts','Alerts'],['/account.html#plan','Plan &amp; payments'],['/account.html#security','Security']];
 async function buildNav(){const n=document.getElementById('nav');if(!n)return;const u=await session();
   n.querySelectorAll('.keep').forEach(a=>a.remove());
-  n.insertAdjacentHTML('beforeend',u?'<a class="keep" href="/dashboard.html">Dashboard</a><a class="keep" href="/account.html">Account</a><a class="keep" href="#" id="signout">Sign out</a>':'<a class="keep" href="/signin.html">Sign in</a><a class="keep" href="/signup.html">Sign up free</a>');
-  const so=document.getElementById('signout');if(so)so.addEventListener('click',async e=>{e.preventDefault();try{await api('/api/auth/logout',{})}catch(_){}location.href='/'})}
+  if(!u){n.insertAdjacentHTML('beforeend','<a class="keep" href="/signin.html">Sign in</a><a class="keep" href="/signup.html">Sign up free</a>');return}
+  n.insertAdjacentHTML('beforeend','<div class="keep um"><button type="button" class="uav" id="umb" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">'+esc(initials(u.name))+'</button>'+
+    '<div class="umenu hide" id="umm" role="menu"><div class="umh"><span class="uav big" aria-hidden="true">'+esc(initials(u.name))+'</span><div><b>'+esc(u.name)+'</b><small>'+esc(u.email)+'</small></div></div>'+
+    MENU.map(m=>'<a role="menuitem" href="'+m[0]+'">'+m[1]+'</a>').join('')+'<hr><a role="menuitem" href="#" id="signout">Sign out</a></div></div>');
+  const b=document.getElementById('umb'),m=document.getElementById('umm');
+  const close=()=>{m.classList.add('hide');b.setAttribute('aria-expanded','false')};
+  b.addEventListener('click',e=>{e.stopPropagation();const open=m.classList.contains('hide');m.classList.toggle('hide',!open);b.setAttribute('aria-expanded',open?'true':'false')});
+  m.addEventListener('click',e=>{if(e.target.closest('a'))close()});
+  document.addEventListener('click',e=>{if(!e.target.closest('.um'))close()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();b.focus()}});
+  document.getElementById('signout').addEventListener('click',async e=>{e.preventDefault();try{await api('/api/auth/logout',{})}catch(_){}location.href='/'})}
 buildNav();
 
 // ---- Sign in with Google: buttons stay hidden until the server says it is configured

@@ -92,8 +92,12 @@ def _sha(s):
 # ----------------------------------------------------------------------------- validation
 def clean_pan(s):
     s = re.sub(r'\s+', '', str(s or '')).upper()
+    if len(s) != 10:
+        raise ApiError('A PAN has exactly 10 characters; you entered %d. Example: ABCPE1234F.' % len(s))
     if not PAN_RE.match(s):
-        raise ApiError('Enter a valid 10-character PAN, e.g. ABCDE1234F.')
+        if not re.match(r'^[A-Z]{5}[0-9]{4}[A-Z]$', s):
+            raise ApiError('A PAN is 5 letters, 4 digits, then 1 letter. Example: ABCPE1234F.')
+        raise ApiError('The 4th letter of a PAN shows the holder type and must be one of A, B, C, F, G, H, J, K, L, P or T (P for an individual). Please check "%s" against your PAN card.' % s[3])
     return s
 
 

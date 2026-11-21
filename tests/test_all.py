@@ -1006,5 +1006,16 @@ class SkipVerify(unittest.TestCase):
         finally: os.environ.pop('SKIP_EMAIL_VERIFY')
 
 
+class PanMessages(unittest.TestCase):
+    def msg(self, v):
+        from auth import clean_pan
+        with self.assertRaises(ApiError) as c: clean_pan(v)
+        return c.exception.msg
+    def test_specific_errors(self):
+        self.assertIn('exactly 10', self.msg('ABCDE123F')); self.assertIn('4th letter', self.msg('ABCDE1234F')); self.assertIn('5 letters', self.msg('1234567890'))
+    def test_valid(self):
+        from auth import clean_pan; self.assertEqual(clean_pan(' abcpe1234f '), 'ABCPE1234F')
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)

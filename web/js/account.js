@@ -24,11 +24,19 @@ async function loadPlan(){const [s,pl,h]=await Promise.all([api('/api/session'),
  try{const o=await api('/api/form-options');$('#st').insertAdjacentHTML('beforeend',o.states.map(s=>`<option>${esc(s)}</option>`).join(''));$('#lg').insertAdjacentHTML('beforeend',o.langs.map(s=>`<option>${esc(s)}</option>`).join(''));
   fill(await api('/api/account/profile'));$('#main').classList.remove('hide');await loadPlan()}catch(e){show(m,'err',e.message)}
  if(location.hash)document.getElementById(location.hash.slice(1))?.scrollIntoView()})();
-$('#pan').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'')});
+const PANRE=/^[A-Z]{3}[ABCFGHJKLPT][A-Z][0-9]{4}[A-Z]$/;
+function panCheck(){const v=$('#pan').value,h=$('#panhint');if(P&&P.pan_set)return;if(!v){h.textContent='Required to start the search. Check it carefully - once saved it cannot be changed.';h.className='hint';return}
+ if(v.length<10){h.textContent=v.length+' of 10 characters';h.className='hint';return}
+ if(PANRE.test(v)){h.textContent='Looks like a valid PAN.';h.className='hint okk';return}
+ h.className='hint badd';h.textContent=/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(v)?'The 4th letter must be A, B, C, F, G, H, J, K, L, P or T (P for an individual). Yours is "'+v[3]+'".':'A PAN is 5 letters, 4 digits, then 1 letter.'}
+$('#pan').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');$('#imsg').classList.add('hide');panCheck()});
+$('#fi').addEventListener('input',()=>$('#imsg').classList.add('hide'));
+function goHash(){const id=location.hash.slice(1);const el=id&&document.getElementById(id);if(el){el.scrollIntoView({behavior:'smooth'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1600)}}
+window.addEventListener('hashchange',goHash);
 $('#adddp').addEventListener('click',()=>{const v=[...document.querySelectorAll('.dp')].map(i=>i.value);if(v.length<P.max_dp){v.push('');dpRows(v);document.querySelectorAll('.dp')[v.length-1].focus()}});
 document.addEventListener('click',e=>{const b=e.target.closest('.rmdp');if(!b)return;const rows=[...document.querySelectorAll('.dprow')];const i=rows.indexOf(b.closest('.dprow'));const v=[...document.querySelectorAll('.dp')].map(x=>x.value);v.splice(i,1);dpRows(v)});
 $('#fi').addEventListener('submit',async e=>{e.preventDefault();const x=$('#imsg');x.classList.add('hide');const body={folios:dpVals(),aliases:list($('#al').value)};
- if(!P.pan_set&&$('#pan').value){if(!confirm('Save PAN '+$('#pan').value+'? It cannot be changed afterwards.'))return;body.pan=$('#pan').value}
+ if(!P.pan_set&&$('#pan').value){if(!PANRE.test($('#pan').value))return show(x,'err',$('#panhint').textContent||'Check your PAN.');if(!confirm('Save PAN '+$('#pan').value+'? It cannot be changed afterwards.'))return;body.pan=$('#pan').value}
  else if(!P.pan_set)return show(x,'err','Enter your PAN - the search cannot start without it.');
  try{fill(await api('/api/account/profile',body));show(x,'ok','Saved. We are searching the lists with your PAN and IDs - see your dashboard.')}catch(err){show(x,'err',err.message)}});
 $('#fp').addEventListener('submit',async e=>{e.preventDefault();const x=$('#pmsg');x.classList.add('hide');
