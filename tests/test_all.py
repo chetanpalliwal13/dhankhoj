@@ -994,5 +994,17 @@ class Coverage(unittest.TestCase):
     def test_admin_stats_has_registry(self): self.assertEqual(self.svc.admin_stats()['registry']['with_isin'], 2)
 
 
+class SkipVerify(unittest.TestCase):
+    def test_skip_email_verify_only_in_dev_mode(self):
+        st, db, svc, au, *_ = stack(dev_mode=True, skip_email_verify=True); r = au.signup(payload()); self.assertTrue(r['verified']); self.assertTrue(au._by_email('a@x.in')['email_verified_at'])
+        tok, u = au.login('a@x.in', 'Str0ng-pass!'); self.assertTrue(tok)
+    def test_normal_signup_still_needs_email_link(self):
+        st, db, svc, au, *_ = stack(); r = au.signup(payload()); self.assertNotIn('verified', r); self.assertIsNone(au._by_email('a@x.in')['email_verified_at'])
+    def test_flag_ignored_without_dev_mode(self):
+        os.environ['SKIP_EMAIL_VERIFY'] = '1'; os.environ.pop('DEV_MODE', None)
+        try: self.assertFalse(Settings().skip_email_verify)
+        finally: os.environ.pop('SKIP_EMAIL_VERIFY')
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)

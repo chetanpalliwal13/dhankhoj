@@ -44,6 +44,7 @@ class Settings:
         self.port = int(env('PORT', '8080'))
         self.admin_token = env('ADMIN_TOKEN', '')
         self.dev_mode = flag('DEV_MODE', False)  # DEV_MODE=1 returns OTPs in the API response (never in production)
+        self.skip_email_verify = flag('SKIP_EMAIL_VERIFY', False) and self.dev_mode  # local demo only: new accounts are treated as email-verified
         self.trust_proxy = flag('TRUST_PROXY', False)
         self.worker_interval = int(env('WORKER_INTERVAL', '120'))  # seconds; 0 disables the in-process worker
         self.crawl_enabled = flag('CRAWL_ENABLED', False)  # worker fetches company pages listed in crawl_targets (needs outbound internet)

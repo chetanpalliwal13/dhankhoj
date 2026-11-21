@@ -81,3 +81,10 @@ The law puts the duty to publish unpaid-dividend lists on each **company** (CIN,
 6. **Coverage** (`/coverage.html`, `/api/coverage`): shows which companies have a list loaded, how well it was read, and links to IEPF / UDGAM, so "no match" is never presented as "nothing unclaimed".
 
 Limits: the crawler needs outbound internet (it is tested here against a local mock site). Real company pages vary a lot, so unusual layouts may be reported as `partial` or `failed` in `source_docs` and need a parser tweak.
+
+## Try it on your computer (no email, SMS or payment setup)
+
+    python3 demo.py        # open http://localhost:8080
+
+Loads the sample lists into `data/demo.db`, skips email verification and creates `demo@dhankhoj.test` / `Sunrise-Pass-482` with matches ready.
+Any new account whose name and PIN appear in `sample_data/` (for example Rajesh Ansari, 700001) also sees matches. Online payment uses the mock gateway. Never run this mode on a public server.

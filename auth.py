@@ -243,6 +243,10 @@ class Auth:
         if ch_email:
             self._consent(uid, 'email', 'grant', 'signup', ip)
         out = {'email': mask_email(email)}
+        if self.st.skip_email_verify:  # local demo: no mail server needed, the account is usable straight away
+            self.db.x("UPDATE subscribers SET status='active', email_verified_at=?, verified_at=? WHERE id=?", (now_iso(), now_iso(), uid))
+            out['verified'] = True
+            return out
         out.update(self._send_verification(self._get(uid)))
         return out
 
