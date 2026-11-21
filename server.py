@@ -231,6 +231,8 @@ def make_handler(svc, st, rl):
                     return self.google_callback(q)
                 if u.path == '/api/auth/options':
                     return self.json({'ok': True, 'google': bool(st.google_client_id and st.google_client_secret)})
+                if u.path == '/api/coverage':
+                    return self.json({'ok': True, **svc.coverage((q.get('q') or [''])[0].strip()[:60], (q.get('limit') or ['100'])[0])})
                 if u.path == '/api/stats':
                     return self.json({'ok': True, **svc.public_stats()})
                 if u.path == '/api/form-options':
@@ -427,6 +429,24 @@ def make_handler(svc, st, rl):
                 if u.path == '/api/admin/ingest':
                     self.admin()
                     return self.admin_ingest(q)
+                if u.path == '/api/admin/registry':
+                    self.admin()
+                    import registry
+                    n = int(self.headers.get('Content-Length') or 0)
+                    if n <= 0 or n > MAX_UPLOAD:
+                        raise ApiError('Upload is empty or too large.', 413)
+                    return self.json({'ok': True, **registry.import_master(svc.db, self.rfile.read(n).decode('utf-8-sig', 'replace'), is_text=True)})
+                if u.path == '/api/admin/crawl-target':
+                    self.admin()
+                    import registry
+                    d = self.body_json()
+                    cid, _ = registry.upsert_company(svc.db, d.get('company', ''), d.get('isin', ''), d.get('cin', ''))
+                    if not cid:
+                        raise ApiError('company is required')
+                    tid = registry.add_crawl_target(svc.db, cid, d.get('url', ''))
+                    if not tid:
+                        raise ApiError('url must start with http:// or https://')
+                    return self.json({'ok': True, 'target': tid})
                 if u.path == '/api/admin/tick':
                     self.admin()
                     return self.json({'ok': True, **svc.tick()})

@@ -12,6 +12,11 @@ def norm_tokens(text, drop_titles=True):
     return t
 
 
+def _dp(s):
+    k = re.sub(r'[^A-Z0-9]', '', str(s or '').upper())
+    return k if re.fullmatch(r'(?:IN[0-9A-Z]{6}|[0-9]{8})[0-9]{8}', k) else ''
+
+
 def folio_key(s):
     return re.sub(r'[^A-Z0-9]', '', str(s or '').upper())
 
@@ -55,8 +60,37 @@ def score_name(user_tokens, blob_tokens):
 
 
 def classify(user, rec):
+    """Wrapper that also reports WHY it matched: -> (conf, score, reason)."""
+    conf, sc = _classify(user, rec)
+    if not conf:
+        return None, sc, ''
+    if rec.get('dp_key') and rec['dp_key'] in user.get('dps', ()):
+        return 'high', 1.0, 'dp_client_id'
+    if rec['folio_key'] and rec['folio_key'] in user['folios']:
+        return 'high', 1.0, 'folio'
+    if user.get('pan') and user['pan'] in rec['blob_tokens']:
+        return 'high', 1.0, 'pan'
+    reason = 'name'
+    pin_u, pin_r = user.get('pincode') or '', rec.get('pincode') or ''
+    if pin_u and pin_u == pin_r:
+        reason = 'name+pin'
+    fu = user.get('father_tokens') or []
+    if fu and rec.get('father_tokens'):
+        fs, fstrong, _ = score_name(fu, rec['father_tokens'])
+        if fs >= 0.66 and fstrong >= 1:
+            reason += '+father'
+            if conf == 'medium':
+                conf = 'high'
+            elif conf == 'low' and sc >= 0.66:
+                conf = 'medium'
+    return conf, sc, reason
+
+
+def _classify(user, rec):
     """user: {'tokens':[...], 'pincode':str, 'folios':set}  rec: {'blob_tokens', 'pincode', 'folio_key'}
     -> (confidence 'high'|'medium'|'low'|None, score)."""
+    if rec.get('dp_key') and rec['dp_key'] in user.get('dps', ()):
+        return 'high', 1.0
     if rec['folio_key'] and rec['folio_key'] in user['folios']:
         return 'high', 1.0
     if user.get('pan') and user['pan'] in rec['blob_tokens']:  # the PAN is a unique key: a list row that carries it is this person
@@ -103,32 +137,35 @@ def load_records(db, ids):
     return out
 
 
-def user_profile(name, aliases=(), pincode='', folios=(), pan=''):
+def user_profile(name, aliases=(), pincode='', folios=(), pan='', father=''):
     names = [name] + list(aliases or [])
-    return [{'tokens': norm_tokens(n), 'pincode': (pincode or '').strip(), 'folios': {folio_key(f) for f in (folios or []) if folio_key(f)}, 'pan': (pan or '').upper()} for n in names if norm_tokens(n)]
+    return [{'tokens': norm_tokens(n), 'pincode': (pincode or '').strip(), 'folios': {folio_key(f) for f in (folios or []) if folio_key(f)}, 'pan': (pan or '').upper(), 'dps': {k for k in (_dp(f) for f in (folios or [])) if k}, 'father_tokens': norm_tokens(father)} for n in names if norm_tokens(n)]
 
 
-def find_matches(db, name, aliases=(), pincode='', folios=(), limit=200, pan=''):
+def find_matches(db, name, aliases=(), pincode='', folios=(), limit=200, pan='', father='', with_reason=False):
     """All records that plausibly belong to this person: [(row, conf, score)] best first."""
-    profs = user_profile(name, aliases, pincode, folios, pan)
+    profs = user_profile(name, aliases, pincode, folios, pan, father)
     found = {}
     for p in profs:
         ids = candidate_ids(db, p['tokens'])
         for fk in p['folios']:
             ids.update(r['id'] for r in db.q('SELECT id FROM records WHERE folio_key=?', (fk,)))
+        for dk in p['dps']:
+            ids.update(r['id'] for r in db.q('SELECT id FROM records WHERE dp_key=?', (dk,)))
         if p['pan']:
             ids.update(r['rec_id'] for r in db.q('SELECT rec_id FROM rec_tok WHERE token=?', (p['pan'],)))
         for r in load_records(db, ids):
-            rec = {'blob_tokens': norm_tokens(r['blob'], drop_titles=True), 'pincode': r['pincode'] or '', 'folio_key': r['folio_key']}
-            conf, sc = classify(p, rec)
+            rec = {'blob_tokens': norm_tokens(r['blob'], drop_titles=True), 'pincode': r['pincode'] or '', 'folio_key': r['folio_key'],
+                   'dp_key': r['dp_key'] if 'dp_key' in r.keys() else None, 'father_tokens': norm_tokens(r['father']) if 'father' in r.keys() and r['father'] else []}
+            conf, sc, why = classify(p, rec)
             if conf:
                 cur = found.get(r['id'])
                 rank = {'high': 3, 'medium': 2, 'low': 1}
                 if not cur or rank[conf] > rank[cur[1]]:
-                    found[r['id']] = (r, conf, sc)
+                    found[r['id']] = (r, conf, sc, why)
     rank = {'high': 3, 'medium': 2, 'low': 1}
-    res = sorted(found.values(), key=lambda x: (-rank[x[1]], -x[2], -(x[0]['amount'] or 0)))
-    return res[:limit]
+    res = sorted(found.values(), key=lambda x: (-rank[x[1]], -x[2], -(x[0]['amount'] or 0)))[:limit]
+    return res if with_reason else [x[:3] for x in res]
 
 
 # ---------- masking / formatting ----------

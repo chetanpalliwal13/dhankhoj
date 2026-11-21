@@ -23,6 +23,7 @@ import sys
 from config import Settings
 from db import DB
 from matcher import folio_key, norm_tokens
+import registry
 
 TAIL = re.compile(r'^(?P<head>.*?)(?:\s+(?P<pin>\d{6}))?\s+(?P<hold>\d{1,9})\s+(?P<amt>\d{1,3}(?:,\d{2,3})*\.\d{1,2}|\d+\.\d{1,2})\s*$')
 TAIL_NOHOLD = re.compile(r'^(?P<head>.*?)(?:\s+(?P<pin>\d{6}))?\s+(?P<amt>\d{1,3}(?:,\d{2,3})*\.\d{1,2}|\d+\.\d{1,2})\s*$')
@@ -47,6 +48,21 @@ def backfill_pan_tokens(db):
                 n += 1
     c.commit()
     db.meta_set('pan_tok_v1', '1')
+    return n
+
+
+def backfill_keys(db):
+    """One-time: canonical DP-Client ids for records loaded before they existed."""
+    if db.meta_get('dp_key_v1'):
+        return 0
+    c, n = db.conn, 0
+    for r in c.execute('SELECT id, folio, blob FROM records WHERE dp_key IS NULL').fetchall():
+        k = registry.dp_key(r['folio']) or next(iter(sorted(registry.find_dp_keys('%s %s' % (r['folio'], r['blob'])))), '')
+        if k:
+            c.execute('UPDATE records SET dp_key=? WHERE id=?', (k, r['id']))
+            n += 1
+    c.commit()
+    db.meta_set('dp_key_v1', '1')
     return n
 
 
@@ -167,7 +183,7 @@ def parse_text(text):
 
 
 def _map_headers(hdr):
-    cols = {'folio': [], 'name': None, 'addr': [], 'pin': None, 'hold': None, 'amt': None, 'type': None, 'fy': None}
+    cols = {'folio': [], 'name': None, 'addr': [], 'pin': None, 'hold': None, 'amt': None, 'type': None, 'fy': None, 'father': None}
     amt_rank = None
     for i, h in enumerate(hdr):
         u = re.sub(r'[^A-Z0-9 ]', ' ', h.upper())
@@ -177,6 +193,8 @@ def _map_headers(hdr):
             cols['fy'] = i
         elif 'FOLIO' in u or re.search(r'\b(DP|CLIENT|BENEF\w*)\b', u):
             cols['folio'].append(i)
+        elif 'FATHER' in u or 'HUSBAND' in u or 'GUARDIAN' in u:
+            cols['father'] = i
         elif 'NAME' in u and 'FATHER' not in u and 'COMPANY' not in u and cols['name'] is None:
             cols['name'] = i
         elif 'ADD' in u:
@@ -219,6 +237,7 @@ def parse_rows(rows):
             skipped.append(' '.join(r)[:80])
             continue
         addr = ' '.join(cell(r, i) for i in cols['addr'] if cell(r, i))
+        father = cell(r, cols['father'])
         pin = re.sub(r'\D', '', cell(r, cols['pin']))[:6]
         if len(pin) != 6:
             m = re.search(r'\b\d{6}\b', addr)
@@ -226,7 +245,7 @@ def parse_rows(rows):
         h = _money(cell(r, cols['hold']))
         t = cell(r, cols['type'])
         out.append({'dtype': norm_dtype(t) if t else None, 'fy': norm_fy(t) or norm_fy(cell(r, cols['fy'])), 'folio': folio, 'blob': re.sub(r'\s+', ' ', (name + ' ' + addr).strip()),
-                    'pincode': pin, 'holding': int(h) if h is not None else None, 'amount': amt})
+                    'pincode': pin, 'holding': int(h) if h is not None else None, 'amount': amt, 'father': father})
     return out, skipped
 
 
@@ -283,7 +302,30 @@ def load_companies_csv(db, path):
     return n
 
 
-def ingest_file(db, company, path, fy=None, dtype=None, source_url='', declared_on=None):
+STATED_RE = re.compile(r'(?:GRAND\s+TOTAL|TOTAL(?:\s+AMOUNT)?)\D{0,12}?((?:\d{1,3}(?:,\d{2,3})+|\d+)(?:\.\d{1,2})?)\s*$', re.I | re.M)
+
+
+def stated_total(kind, content):
+    """The total the company itself prints (if any), used to check that every row was read."""
+    if kind == 'rows':
+        text = '\n'.join(' '.join(c for c in r if c) for r in content)
+    else:
+        text = content
+    vals = [_money(m.group(1)) for m in STATED_RE.finditer(text)]
+    vals = [v for v in vals if v]
+    return max(vals) if vals else None
+
+
+def validate(parsed_total, stated, n_rows, n_skipped):
+    """-> 'ok' | 'mismatch' | 'unverified' | 'partial'. A list whose parsed total differs from its printed total is flagged, never trusted silently."""
+    if stated:
+        if abs(parsed_total - stated) <= max(1.0, stated * 0.001):
+            return 'ok'
+        return 'partial' if parsed_total < stated else 'mismatch'
+    return 'unverified'  # skipped lines are mostly titles and headings, so they cannot prove a gap
+
+
+def ingest_file(db, company, path, fy=None, dtype=None, source_url='', declared_on=None, source_doc_id=None):
     """Parse one list and store it. Returns a summary dict. Duplicate files are ignored (by content hash)."""
     with open(path, 'rb') as fh:
         data = fh.read()
@@ -299,26 +341,29 @@ def ingest_file(db, company, path, fy=None, dtype=None, source_url='', declared_
     declared = dt.date.fromisoformat(declared_on) if declared_on else estimate_declared(fy, dtype)
     due = due_from_declared(declared)
     cid = get_company(db, company)
-    cur = db.x('INSERT INTO lists(company_id,fy,dtype,source_url,declared_on,iepf_due,ingested_at,file_hash) VALUES(?,?,?,?,?,?,?,?)',
-               (cid, fy, dtype, source_url, declared.isoformat() if declared else None, due.isoformat() if due else None, dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat(timespec='seconds'), fh))
+    stated = stated_total(kind, content)
+    cur = db.x('INSERT INTO lists(company_id,fy,dtype,source_url,declared_on,iepf_due,ingested_at,file_hash,stated_total,source_doc_id) VALUES(?,?,?,?,?,?,?,?,?,?)',
+               (cid, fy, dtype, source_url, declared.isoformat() if declared else None, due.isoformat() if due else None, dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat(timespec='seconds'), fh, stated, source_doc_id))
     lid = cur.lastrowid
     n = 0
     total = 0.0
     c = db.conn
     for r in rows:
         rh = hashlib.sha1(('%s|%s|%s|%s|%s' % (lid, r['folio'], r['blob'], r['amount'], r['holding'])).encode()).hexdigest()
-        cur = c.execute('INSERT OR IGNORE INTO records(list_id,company_id,folio,folio_key,blob,pincode,holding,amount,rowhash) VALUES(?,?,?,?,?,?,?,?,?)',
-                        (lid, cid, r['folio'], folio_key(r['folio']), r['blob'], r['pincode'], r['holding'], r['amount'], rh))
+        dpk = registry.dp_key(r['folio']) or next(iter(sorted(registry.find_dp_keys(r['folio'] + ' ' + r['blob']))), '')
+        cur = c.execute('INSERT OR IGNORE INTO records(list_id,company_id,folio,folio_key,blob,pincode,holding,amount,rowhash,dp_key,father) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+                        (lid, cid, r['folio'], folio_key(r['folio']), r['blob'], r['pincode'], r['holding'], r['amount'], rh, dpk or None, (r.get('father') or None)))
         if cur.rowcount:
             n += 1
             total += r['amount']
             toks = {t for t in norm_tokens(r['blob'])[:8] if len(t) >= 3} | set(PAN_IN_TEXT.findall(str(r['blob']).upper()))  # PANs anywhere in the row are indexed
             c.executemany('INSERT INTO rec_tok(token,rec_id) VALUES(?,?)', [(t, cur.lastrowid) for t in toks])
-    c.execute('UPDATE lists SET n_rows=?, total=? WHERE id=?', (n, total, lid))
+    val = validate(total, stated, n, len(skipped))
+    c.execute('UPDATE lists SET n_rows=?, total=?, validation=? WHERE id=?', (n, total, val, lid))
     c.commit()
     db.meta_set('last_ingest_at', dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat(timespec='seconds'))
     return {'status': 'ok', 'list_id': lid, 'rows': n, 'total': round(total, 2), 'fy': fy, 'dtype': dtype, 'declared_on': declared.isoformat() if declared else None,
-            'iepf_due_est': due.isoformat() if due else None, 'skipped': len(skipped), 'skipped_sample': skipped[:3]}
+            'iepf_due_est': due.isoformat() if due else None, 'skipped': len(skipped), 'skipped_sample': skipped[:3], 'stated_total': stated, 'validation': val}
 
 
 def _mode(vals):

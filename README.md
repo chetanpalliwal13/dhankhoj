@@ -66,3 +66,18 @@ Optional. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (see `.env.example`)
 ## Hosting
 
 See `DEPLOY-HOSTINGER.md` (Hostinger Python app or VPS). `passenger_wsgi.py` is the WSGI entry point (`application`) for shared Python hosting and gunicorn.
+
+## Data architecture (company-centric)
+
+The law puts the duty to publish unpaid-dividend lists on each **company** (CIN, Companies Act s.124), so the system is built around companies, not exchanges.
+
+1. **Registry** (`registry.py`): NSE / BSE security-master CSVs are merged on ISIN (then CIN, symbol, code, name).
+   `python3 registry.py import EQUITY_L.csv` then `python3 registry.py import bse_list.csv`; or POST the CSV to `/api/admin/registry`.
+2. **Discovery + fetch** (`crawler.py`): add a company's investor page with `python3 crawler.py add "REC Limited" https://...` (or POST `/api/admin/crawl-target`).
+   Set `CRAWL_ENABLED=1` and the worker checks due targets every cycle. It obeys robots.txt, waits between requests, skips unchanged pages (content hash), backs off after failures.
+3. **Provenance** (`source_docs`): url, fetched_at, SHA-256, rows parsed/skipped, parsed vs printed total, validation (`ok`, `partial`, `mismatch`, `unverified`).
+4. **Parse + keys**: header-vocabulary column mapper, canonical DP-Client ID (`records.dp_key`), folio key, father/husband name, PIN, PAN if the list carries one.
+5. **Matching** (`matcher.py`), strongest first: DP-Client ID, folio, PAN in row, then name variants + PIN (+ father name raises confidence). Single-word names never rise above "low". Alerts go out only for high / medium.
+6. **Coverage** (`/coverage.html`, `/api/coverage`): shows which companies have a list loaded, how well it was read, and links to IEPF / UDGAM, so "no match" is never presented as "nothing unclaimed".
+
+Limits: the crawler needs outbound internet (it is tested here against a local mock site). Real company pages vary a lot, so unusual layouts may be reported as `partial` or `failed` in `source_docs` and need a parser tweak.

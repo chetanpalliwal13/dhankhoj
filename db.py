@@ -31,6 +31,13 @@ CREATE TABLE IF NOT EXISTS outbox(
   status TEXT DEFAULT 'pending', err TEXT, tries INTEGER DEFAULT 0, created_at TEXT, sent_at TEXT);
 CREATE INDEX IF NOT EXISTS idx_outbox_status ON outbox(status);
 CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v TEXT);
+CREATE TABLE IF NOT EXISTS source_docs(
+  id INTEGER PRIMARY KEY, company_id INTEGER, url TEXT, fetched_at TEXT, content_hash TEXT, bytes INTEGER, kind TEXT,
+  status TEXT, rows_parsed INTEGER DEFAULT 0, rows_skipped INTEGER DEFAULT 0, parsed_total REAL, stated_total REAL, validation TEXT, report TEXT, list_id INTEGER);
+CREATE INDEX IF NOT EXISTS idx_src_company ON source_docs(company_id);
+CREATE TABLE IF NOT EXISTS crawl_targets(
+  id INTEGER PRIMARY KEY, company_id INTEGER NOT NULL, url TEXT NOT NULL UNIQUE, kind TEXT DEFAULT 'page', active INTEGER DEFAULT 1,
+  last_checked TEXT, last_hash TEXT, last_status TEXT, last_error TEXT, fails INTEGER DEFAULT 0, next_check REAL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS experts(
   id INTEGER PRIMARY KEY, name TEXT, profession TEXT, membership_no TEXT, city TEXT, email TEXT UNIQUE, phone TEXT, languages TEXT,
   status TEXT DEFAULT 'pending', admin_note TEXT, consent_at TEXT, created_at TEXT, verified_at TEXT);
@@ -70,6 +77,11 @@ USER_COLS = [
 ]
 
 
+COMPANY_COLS = [('cin', 'TEXT'), ('nse_symbol', 'TEXT'), ('bse_code', 'TEXT'), ('ir_url', 'TEXT'), ('updated_at', 'TEXT')]
+LIST_COLS = [('stated_total', 'REAL'), ('validation', 'TEXT'), ('source_doc_id', 'INTEGER')]
+RECORD_COLS = [('dp_key', 'TEXT'), ('father', 'TEXT'), ('conf_src', 'TEXT')]
+
+
 class DB:
     """One SQLite connection per thread. WAL mode so the web server and the worker can run together."""
 
@@ -93,6 +105,14 @@ class DB:
         for name, typ in USER_COLS:
             if name not in have:
                 c.execute('ALTER TABLE subscribers ADD COLUMN %s %s' % (name, typ))
+        for tbl, cols in (('companies', COMPANY_COLS), ('lists', LIST_COLS), ('records', RECORD_COLS)):
+            have_t = {r['name'] for r in c.execute('PRAGMA table_info(%s)' % tbl)}
+            for name, typ in cols:
+                if name not in have_t:
+                    c.execute('ALTER TABLE %s ADD COLUMN %s %s' % (tbl, name, typ))
+        c.execute('CREATE INDEX IF NOT EXISTS idx_rec_dp ON records(dp_key)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_co_isin ON companies(isin)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_co_cin ON companies(cin)')
         pc = {r['name'] for r in c.execute('PRAGMA table_info(payments)')}
         for name, typ in (('tier', 'TEXT'), ('period', 'TEXT')):
             if name not in pc:

@@ -887,5 +887,112 @@ class Wsgi(unittest.TestCase):
         self.assertTrue(self.call('GET', '/../config.py')[0].startswith('404')); self.assertTrue(self.call('GET', '/nope.html')[0].startswith('404'))
 
 
+import registry, crawler
+
+NSE_CSV = "SYMBOL,NAME OF COMPANY, SERIES, DATE OF LISTING, PAID UP VALUE, MARKET LOT, ISIN NUMBER, FACE VALUE\nREC,REC Limited,EQ,01-01-2008,10,1,INE020B01018,10\nTCS,Tata Consultancy Services Limited,EQ,01-01-2004,1,1,INE467B01029,1\n"
+BSE_CSV = "Security Code,Security Id,Issuer Name,Security Name,ISIN No\n532955,REC,REC LIMITED,REC LTD,INE020B01018\n500400,TATAPOWER,Tata Power Company Limited,TATA POWER,INE245A01021\n999999,BAD,Broken Co,BROKEN,XX123\n"
+
+
+class Registry(unittest.TestCase):
+    def setUp(self): self.db = DB(':memory:')
+    def test_nse_bse_merge_on_isin(self):
+        a = registry.import_master(self.db, NSE_CSV, is_text=True); b = registry.import_master(self.db, BSE_CSV, is_text=True)
+        self.assertEqual(a['new'], 2); self.assertEqual(b['merged'], 1); self.assertEqual(b['bad_isin'], 1)
+        r = self.db.one("SELECT * FROM companies WHERE isin='INE020B01018'"); self.assertEqual((r['nse_symbol'], r['bse_code']), ('REC', '532955'))
+        self.assertEqual(self.db.one('SELECT COUNT(*) n FROM companies')['n'], 4)  # REC, TCS, Tata Power, Broken Co
+    def test_reimport_is_idempotent(self):
+        registry.import_master(self.db, NSE_CSV, is_text=True); r = registry.import_master(self.db, NSE_CSV, is_text=True)
+        self.assertEqual((r['new'], r['merged'], r['same']), (0, 0, 2))
+    def test_canonical_keys(self):
+        self.assertEqual(registry.dp_key('IN300118-11111111'), 'IN30011811111111'); self.assertEqual(registry.dp_key('1201 0900 0001 2345'), '1201090000012345')
+        self.assertEqual(registry.dp_key('123456'), ''); self.assertEqual(registry.find_dp_keys('folio 1201090000012345 / IN300118 11111111'), {'1201090000012345', 'IN30011811111111'})
+        self.assertEqual(registry.norm_cin('L40101DL1969GOI005069'), 'L40101DL1969GOI005069'); self.assertEqual(registry.norm_cin('nonsense'), '')
+    def test_name_only_join_without_isin(self):
+        registry.upsert_company(self.db, 'Acme Industries Limited'); _, how = registry.upsert_company(self.db, 'ACME INDUSTRIES LTD', isin='INE000A01010')
+        self.assertEqual(how, 'merged'); self.assertEqual(self.db.one('SELECT COUNT(*) n FROM companies')['n'], 1)
+
+
+class Keys(unittest.TestCase):
+    def setUp(self): self.st, self.db, self.svc, _ = mk()
+    def test_dp_key_stored_and_matched(self):
+        r = self.db.one("SELECT dp_key FROM records WHERE folio='IN30011811111111'"); self.assertEqual(r['dp_key'], 'IN30011811111111')
+        res = M.find_matches(self.db, 'Totally Different Name', folios=['IN300118-11111111'], with_reason=True)
+        self.assertEqual((res[0][1], res[0][3]), ('high', 'dp_client_id'))
+    def test_name_only_single_word_never_alerts(self):
+        for r in M.find_matches(self.db, 'Ramesh'): self.assertEqual(r[1], 'low')
+    def test_stated_total_validation(self):
+        txt = LINES.replace('Test', 'Test') + "\nTOTAL 1,211.25\n"
+        _, db, _, res = mk(text=txt, company='Total Co'); self.assertEqual(res['stated_total'], 1211.25); self.assertEqual(res['validation'], 'ok')
+        _, db, _, res = mk(text=LINES + "\nTOTAL 5,000.00\n", company='Short Co'); self.assertEqual(res['validation'], 'partial')
+        self.assertEqual(db.one('SELECT validation FROM lists')['validation'], 'partial')
+        _, db, _, res = mk(); self.assertEqual(res['validation'], 'unverified')
+    def test_father_name_lifts_confidence(self):
+        csvt = "FOLIO,NAME,FATHER NAME,ADD1,PINCODE,HOLDING,NET DIVIDEND\n7001,SUNIL SHARMA,RAJESH SHARMA,PUNE,411001,10,100.00\n"
+        d = tempfile.mkdtemp(); p = os.path.join(d, 'f.csv'); _w(p, csvt); db = DB(':memory:'); ingest.ingest_file(db, 'Fa Co', p, declared_on='2026-11-14')
+        no = M.find_matches(db, 'Sunil Sharma', pincode='', with_reason=True); yes = M.find_matches(db, 'Sunil Sharma', pincode='', father='Rajesh Sharma', with_reason=True)
+        self.assertEqual(no[0][1], 'medium'); self.assertEqual(yes[0][1], 'high'); self.assertIn('father', yes[0][3])
+
+
+class _Site(BaseHTTPRequestHandler):
+    hits = []
+    def log_message(self, *a): pass
+    def do_GET(self):
+        _Site.hits.append(self.path)
+        if self.path == '/robots.txt':
+            return self._send(200, b'User-agent: *\nDisallow: /private/\n', 'text/plain')
+        if self.path == '/investors':
+            return self._send(200, b'<html><a href="/files/unpaid-dividend-2026-27.txt">Unpaid Dividend FY 2026-27</a><a href="/files/annual-report.pdf">Annual report</a><a href="/private/unclaimed-dividend.txt">Unclaimed hidden</a></html>', 'text/html')
+        if self.path == '/files/unpaid-dividend-2026-27.txt':
+            return self._send(200, LINES.encode() + b'\nTOTAL 1211.25\n', 'text/plain')
+        self._send(404, b'no', 'text/plain')
+    def _send(self, code, body, ct):
+        self.send_response(code); self.send_header('Content-Type', ct); self.send_header('Content-Length', str(len(body))); self.end_headers(); self.wfile.write(body)
+
+
+class Crawl(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.srv = ThreadingHTTPServer(('127.0.0.1', 0), _Site); cls.port = cls.srv.server_address[1]; threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
+        crawler.HOST_DELAY = 0; crawler._robots.clear()
+    @classmethod
+    def tearDownClass(cls): cls.srv.shutdown()
+    def setUp(self):
+        self.db = DB(':memory:'); self.dir = tempfile.mkdtemp(); _Site.hits.clear(); crawler._robots.clear()
+        self.cid, _ = registry.upsert_company(self.db, 'Mock Power Ltd'); self.base = 'http://127.0.0.1:%d' % self.port
+    def run_all(self):
+        self.db.x('UPDATE crawl_targets SET next_check=0'); return crawler.crawl_due(self.db, self.dir)
+    def test_link_extraction_filters(self):
+        links = crawler.extract_links('http://h/investors', '<a href="/a/unpaid-dividend.pdf">Unpaid dividend</a><a href="/a/annual.pdf">Annual</a><a href="mailto:x@y">m</a>')
+        self.assertEqual([u for u, _ in links], ['http://h/a/unpaid-dividend.pdf'])
+    def test_crawl_discovers_ingests_and_records_provenance(self):
+        registry.add_crawl_target(self.db, self.cid, self.base + '/investors'); r = self.run_all()
+        self.assertEqual((r[0]['docs'], r[0]['parsed']), (1, 1))
+        sd = self.db.one('SELECT * FROM source_docs'); self.assertEqual((sd['status'], sd['rows_parsed'], sd['validation']), ('parsed', 5, 'ok')); self.assertTrue(sd['url'].endswith('2026-27.txt')); self.assertEqual(len(sd['content_hash']), 64)
+        self.assertEqual(self.db.one('SELECT COUNT(*) n FROM records')['n'], 5); self.assertEqual(self.db.one('SELECT fy FROM lists')['fy'], '2026-27')
+        self.assertNotIn('/files/annual-report.pdf', _Site.hits)  # irrelevant files are not downloaded
+        self.assertNotIn('/private/unclaimed-dividend.txt', _Site.hits)  # robots.txt respected
+    def test_second_run_detects_no_change(self):
+        registry.add_crawl_target(self.db, self.cid, self.base + '/investors'); self.run_all(); n = len(_Site.hits)
+        r = self.run_all(); self.assertEqual(r[0]['status'], 'unchanged'); self.assertEqual(self.db.one('SELECT COUNT(*) n FROM lists')['n'], 1)
+        self.assertEqual(self.db.one('SELECT COUNT(*) n FROM records')['n'], 5)
+    def test_robots_block_and_failure_backoff(self):
+        registry.add_crawl_target(self.db, self.cid, self.base + '/private/x'); r = self.run_all(); self.assertEqual(r[0]['status'], 'error'); self.assertIn('robots', r[0]['error'])
+        t = self.db.one('SELECT * FROM crawl_targets'); self.assertEqual(t['fails'], 1); self.assertGreater(t['next_check'], time.time() + 3600)
+    def test_missing_page_is_error_not_crash(self):
+        registry.add_crawl_target(self.db, self.cid, self.base + '/missing'); self.assertEqual(self.run_all()[0]['status'], 'error')
+    def test_rejects_non_http_target(self): self.assertIsNone(registry.add_crawl_target(self.db, self.cid, 'file:///etc/passwd'))
+
+
+class Coverage(unittest.TestCase):
+    def setUp(self): self.st, self.db, self.svc, _ = mk(); registry.import_master(self.db, NSE_CSV, is_text=True)
+    def test_coverage_lists_covered_and_not_yet(self):
+        c = self.svc.coverage(); st = {x['name']: x['state'] for x in c['companies']}
+        self.assertEqual(st['Test Co Ltd'], 'covered'); self.assertEqual(st['REC Limited'], 'not_yet'); self.assertEqual(c['companies'][0]['state'], 'covered')
+        self.assertTrue(any('iepf' in o['url'] for o in c['official']))
+    def test_coverage_search_by_symbol_and_isin(self):
+        self.assertEqual([x['name'] for x in self.svc.coverage('REC')['companies']], ['REC Limited']); self.assertEqual(len(self.svc.coverage('INE467B01029')['companies']), 1)
+    def test_admin_stats_has_registry(self): self.assertEqual(self.svc.admin_stats()['registry']['with_isin'], 2)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)

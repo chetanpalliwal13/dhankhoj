@@ -1,6 +1,7 @@
 """Business logic: public check, subscribe + OTP verification, matching, alerts, reminders, outbox, privacy tools."""
 import datetime as dt
 import hashlib
+import os
 import hmac
 import json
 import re
@@ -96,6 +97,7 @@ class Service:
         from auth import Vault  # runtime import: auth imports this module
         self.vault = Vault(st.data_key or ('salt:' + st.salt))
         ingest.backfill_pan_tokens(db)
+        ingest.backfill_keys(db)
 
     # ------------------------------------------------------------ public check (privacy-preserving)
     def check(self, name, pincode='', folio=''):
@@ -139,7 +141,7 @@ class Service:
         if r['password_hash'] and not pan:  # accounts must register a PAN (in the profile) before anything is searched; old anonymous rows are exempt
             self.db.x('DELETE FROM matches WHERE sub_id=?', (sid,))
             return 0
-        found = M.find_matches(self.db, name, aliases, pin, folios, limit=500, pan=pan or '')
+        found = M.find_matches(self.db, name, aliases, pin, folios, limit=500, pan=pan or '', father=(r['father_name'] or ''))
         c = self.db.conn
         keep = [rec['id'] for rec, _, _ in found]
         if keep:  # matches that no longer fit the (possibly edited) profile go away
@@ -404,7 +406,14 @@ class Service:
         q = self.process_alerts()
         d = self.dispatch_outbox()
         self.purge()
-        return {'queued': q, **d}
+        out = {'queued': q, **d}
+        if self.st.crawl_enabled:
+            try:
+                import crawler
+                out['crawled'] = len(crawler.crawl_due(self.db, os.path.dirname(os.path.abspath(self.st.db_path)), 10))
+            except Exception as e:
+                out['crawl_error'] = str(e)[:100]
+        return out
 
     # ------------------------------------------------------------ public numbers / admin
     def public_stats(self):
@@ -412,10 +421,37 @@ class Service:
         return {'companies_covered': s['companies_covered'], 'records': s['records'], 'amount': s['amount'], 'last_ingest_at': s['last_ingest_at'],
                 'subscribers': self.db.one("SELECT COUNT(*) n FROM subscribers WHERE status='active'")['n']}
 
+    def coverage(self, term='', limit=100):
+        """Honest coverage: for each company, the newest list we hold and how well it was read. Companies without a list are shown as not yet covered."""
+        args, where = [], ''
+        if term:
+            where, args = 'WHERE c.name LIKE ? OR c.nse_symbol LIKE ? OR c.bse_code=? OR c.isin=?', ['%' + term + '%', term.upper() + '%', term, term.upper()]
+        rows = self.db.q('SELECT c.id, c.name, c.nse_symbol, c.bse_code, c.isin, c.cin, '
+                         '(SELECT MAX(l.ingested_at) FROM lists l WHERE l.company_id=c.id) last_list, '
+                         '(SELECT COUNT(*) FROM lists l WHERE l.company_id=c.id) lists, '
+                         '(SELECT l.validation FROM lists l WHERE l.company_id=c.id ORDER BY l.id DESC LIMIT 1) validation, '
+                         '(SELECT t.last_checked FROM crawl_targets t WHERE t.company_id=c.id ORDER BY t.last_checked DESC LIMIT 1) last_checked '
+                         'FROM companies c ' + where + ' ORDER BY (last_list IS NULL), c.name LIMIT ?', args + [min(max(int(limit), 1), 500)])
+        total = self.db.one('SELECT COUNT(*) n FROM companies')['n']
+        covered = self.db.one('SELECT COUNT(DISTINCT company_id) n FROM lists')['n']
+        out = []
+        for r in rows:
+            d = dict(r)
+            d['state'] = 'covered' if r['lists'] else 'not_yet'
+            out.append(d)
+        return {'companies_total': total, 'companies_covered': covered, 'companies': out,
+                'official': [{'name': 'IEPF - search your shares', 'url': 'https://www.iepf.gov.in/IEPFWebSite/IEPF/home.html'},
+                             {'name': 'MCA - investor services', 'url': 'https://www.mca.gov.in/content/mca/global/en/home.html'},
+                             {'name': 'RBI UDGAM - bank deposits', 'url': 'https://udgam.rbi.org.in/'}],
+                'note': 'We read the lists companies publish. A company marked "not yet" has not been checked, which does not mean you have nothing there.'}
+
     def admin_stats(self):
         s = ingest.stats(self.db)
         s['subscribers_active'] = self.db.one("SELECT COUNT(*) n FROM subscribers WHERE status='active'")['n']
         s['subscribers_pending'] = self.db.one("SELECT COUNT(*) n FROM subscribers WHERE status='pending'")['n']
+        import registry
+        s['registry'] = registry.registry_stats(self.db)
+        s['sources'] = {r['status']: r['n'] for r in self.db.q('SELECT status, COUNT(*) n FROM source_docs GROUP BY status')}
         s['accounts'] = self.db.one('SELECT COUNT(*) n FROM subscribers WHERE password_hash IS NOT NULL')['n']
         s['paid_plans_active'] = self.db.one('SELECT COUNT(*) n FROM subscribers WHERE plan_until>=?', (dt.date.today().isoformat(),))['n']
         s['paid_by_tier'] = {r['t']: r['n'] for r in self.db.q("SELECT COALESCE(plan_tier,'platinum') t, COUNT(*) n FROM subscribers WHERE plan_until>=? GROUP BY t", (dt.date.today().isoformat(),))}
