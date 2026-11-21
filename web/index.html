@@ -1,0 +1,58 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DhanKhoj - Find your unclaimed dividends before the 7-year clock runs out</title>
+<meta name="description" content="Free account with alerts by email, SMS and WhatsApp when your name appears in a company's unpaid / unclaimed dividend list.">
+<link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/css/site.css"></head><body>
+<div class="hero-wrap"><div class="wrap">
+<header class="top"><a class="logo" href="/"><img src="/favicon.svg" width="32" height="32" alt="">DhanKhoj</a>
+<nav id="nav"><a href="#how">How it works</a><a href="/claim.html">How to claim</a><a href="#faq">FAQ</a><a href="/upgrade.html">Pricing</a></nav></header>
+<div id="gone" class="msg ok hide">Your account and data have been deleted.</div>
+<div class="hero">
+ <div>
+  <h1>Some of your dividends may be sitting in a list you have never seen.</h1>
+  <p class="lead">Companies publish the dividends shareholders never collected, but the lists are spread across thousands of sites and PDFs. We read them for you and message you when your PAN or name appears.</p>
+  <div class="cta"><a class="btn gold" href="/signup.html">Create free account</a><a class="btn ghost" href="/signin.html">Sign in</a></div>
+  <div class="stats" id="stats"><div><b>-</b><span>companies covered</span></div><div><b>-</b><span>entries searchable</span></div><div><b>-</b><span>value listed</span></div></div>
+ </div>
+ <div class="warrant" id="check"><span class="tag">Free, no sign-up</span>
+  <h2>Check your name</h2>
+  <p class="mut">Results are masked. Create an account to see full details.</p>
+  <form id="fcheck" autocomplete="off">
+   <label for="cn">Full name <small>as on your share certificate or demat</small></label><input id="cn" type="text" maxlength="80" required placeholder="e.g. Anita Desai">
+   <div class="row"><div><label for="cp">PIN code <small>optional</small></label><input id="cp" type="text" inputmode="numeric" maxlength="6"></div>
+   <div><label for="cf">Folio / DP-Client ID <small>optional</small></label><input id="cf" type="text" maxlength="24"></div></div>
+   <button id="bcheck">Check my name</button>
+  </form>
+  <div id="cmsg" class="msg hide"></div><div id="cres"></div>
+ </div>
+</div></div></div>
+
+<section id="how"><div class="wrap">
+<div class="sec-h"><h2>You get seven years. Then the money moves to the government.</h2><p>After seven years of no claim, an unpaid dividend (and often the shares) is transferred to the IEPF and disappears from the company's list.</p></div>
+<div class="clock" role="img" aria-label="Seven years in the company's unpaid dividend list, then transfer to the IEPF">
+ <div class="bar7"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="end">IEPF</i></div>
+ <div class="lbl"><span>Year 1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>Transferred</span></div>
+ <div class="ends"><p><b>Years 1 to 7.</b> If a dividend is not collected, the company moves it to its Unpaid Dividend Account and lists the shareholder publicly.</p><p><b>After year 7.</b> Your name leaves the list. You can still claim from the IEPF with Form IEPF-5, but it takes longer.</p></div></div>
+<div class="sec-h"><h2>How DhanKhoj works</h2></div>
+<div class="flow">
+<div><b>1</b><h3>We collect the lists</h3><p>Every company must publish its unpaid-dividend list (Companies Act, s.124). We load them company by company.</p></div>
+<div><b>2</b><h3>We match your PAN and name</h3><p>PAN, demat and folio IDs, spelling variants and PIN code are compared. Only strong matches trigger an alert.</p></div>
+<div><b>3</b><h3>You get reminded</h3><p>By email, SMS or WhatsApp when a match appears, and again as your estimated 7-year deadline gets close.</p></div></div></div></section>
+
+<section id="subscribe"><div class="wrap"><div class="plans-band">
+ <h2>Free for your first 5 companies. Upgrade only if more of them match you.</h2>
+ <p class="lead2">Pay yearly and save up to <b id="psave"></b>. No auto-renewal, so you only pay for the period you choose.</p>
+ <div class="mini" id="mini"></div>
+ <div class="cta"><a class="btn gold" href="/signup.html">Create free account</a><a class="btn ghost" href="/upgrade.html">Compare plans</a></div>
+ <p class="mut" style="color:#AEB7DA;margin:18px 0 0">Your details are used only for matching, alerts and records. Switch any alert off or delete your account yourself. <a style="color:#FFD27A" href="/privacy.html">Privacy notice</a></p>
+</div></div></section>
+
+<section id="faq"><div class="wrap faq"><h2>Questions people ask</h2>
+<details><summary>Is this list from SEBI?</summary><p>No. SEBI does not publish one national list. Each listed company must publish its own unpaid-dividend statement on its website (and on a government-approved site), and after 7 years the money is transferred to the Investor Education and Protection Fund (IEPF). We gather company lists; coverage grows as lists are added, so a "no match" does not prove you have nothing unclaimed.</p></details>
+<details><summary>What happens after 7 years?</summary><p>The dividend, and often the shares too if nothing was claimed for 7 consecutive years, move to the IEPF. The company list stops showing them, but you can still claim from the IEPF using Form IEPF-5. <a href="/claim.html">Step-by-step guide</a>.</p></details>
+<details><summary>How accurate is the match?</summary><p>Matching uses your PAN, name, PIN and any demat (DP-Client) IDs or folio numbers you add. Two people can share a name, so always verify the folio against your own records. We label results high / medium / low confidence and alert only on the first two.</p></details>
+<details><summary>Do you charge anything or help claim for a fee?</summary><p>Creating an account and seeing your first 5 companies is free, with email alerts. If more companies match you, choose Silver, Gold or Platinum (monthly or yearly, with a discount for yearly) and pay by UPI, card or netbanking - no auto-renewal. You can always claim from the company or the IEPF yourself at no cost - our <a href="/claim.html">guide</a> shows how. If you would rather not handle the paperwork, you can optionally ask a verified CS / CA from our panel to do it for a fee quoted in writing first. Be wary of anyone who promises to "release" your dividend and asks for OTPs or upfront money.</p></details>
+<details><summary>Is my data safe?</summary><p>Public search shows masked names only. Full details appear only after you sign in with your password and confirm your email. Your PAN is stored encrypted and shown masked. You can delete your account and data yourself at any time.</p></details>
+</div></section>
+
+<footer><div class="wrap">DhanKhoj is an independent information service. It is not affiliated with SEBI, the IEPF Authority, any stock exchange or any company, and it is not investment or legal advice. Matches are estimates from published lists and may be wrong or incomplete; deadlines shown are estimates. Always confirm with the company or its registrar. <a href="/terms.html">Terms &amp; refunds</a> - <a href="/privacy.html">Privacy</a> - <a href="/claim.html">How to claim</a></div></footer>
+<script src="/js/common.js"></script><script src="/js/app.js"></script></body></html>

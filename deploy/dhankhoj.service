@@ -1,0 +1,13 @@
+[Unit]
+Description=DhanKhoj
+After=network.target
+[Service]
+User=dhankhoj
+WorkingDirectory=/opt/dhankhoj
+ExecStart=/usr/bin/python3 server.py
+Restart=always
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/opt/dhankhoj/data
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+# If WORKER_INTERVAL=0 for the web server, run the worker from cron every 10 minutes
+*/10 * * * * cd /opt/dhankhoj && /usr/bin/python3 worker.py --once >> /var/log/dhankhoj-worker.log 2>&1
+# Nightly backup of the SQLite DB
+15 2 * * * sqlite3 /opt/dhankhoj/data/dhankhoj.db ".backup /opt/dhankhoj/data/backup-$(date +\%a).db"

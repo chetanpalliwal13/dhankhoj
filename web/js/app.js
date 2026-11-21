@@ -1,0 +1,11 @@
+(async()=>{try{const s=await api('/api/stats');const b=document.querySelectorAll('#stats b');
+ b[0].textContent=s.companies_covered.toLocaleString('en-IN');b[1].textContent=s.records.toLocaleString('en-IN');b[2].textContent=inr(s.amount)}catch(e){}
+ try{const p=await api('/api/plan');$('#psave').textContent=Math.max(...p.tiers.map(t=>t.save_percent))+'%';
+  $('#mini').innerHTML=`<a href="/signup.html"><h3>Free</h3><div class="p">${inr(0)}</div><p>${p.free_companies} companies in full, email alerts</p></a>`+p.tiers.map(t=>`<a class="${t.popular?'pop':''}" href="/upgrade.html?plan=${esc(t.key)}"><h3>${esc(t.label)}</h3><div class="p">${inr(t.monthly)}<small> / month</small></div><p>${t.companies?t.companies+' companies':'All companies'}${t.whatsapp?', SMS + WhatsApp':t.sms?', email + SMS':''}</p></a>`).join('')}catch(e){}})();
+if(new URLSearchParams(location.search).get('deleted'))$('#gone').classList.remove('hide');
+$('#fcheck').addEventListener('submit',async e=>{e.preventDefault();const m=$('#cmsg'),out=$('#cres'),btn=$('#bcheck');out.innerHTML='';m.classList.add('hide');btn.disabled=true;
+ try{const r=await api('/api/check',{name:$('#cn').value,pincode:$('#cp').value,folio:$('#cf').value});
+  if(!r.results.length)show(m,'ok','No entry found in the lists we hold yet. Create a free account and we will alert you if one is added.');
+  else{show(m,'ok',r.likely?r.likely+' likely match'+(r.likely>1?'es':'')+(r.total_band?' - roughly '+r.total_band+' in total':'')+(r.possible?' (+'+r.possible+' weaker)':''):r.possible+' possible weaker match'+(r.possible>1?'es':'')+' - add PIN or folio to narrow down');
+   out.innerHTML=r.results.map(x=>`<div class="res"><div><b>${esc(x.company)}</b><br><span class="mut">${esc(x.dtype||'Dividend')} ${esc(x.fy||'')} - ${esc(x.name)} - folio ${esc(x.folio)}</span></div><div style="text-align:right">${esc(x.amount_band)}<br><span class="pill ${x.confidence==='low'?'low':''}">${esc(x.confidence)}</span> ${dleft(x.days_left)}</div></div>`).join('')+(r.more?'<p class="mut"><b>+'+r.more+' more entr'+(r.more>1?'ies':'y')+' not shown here.</b></p>':'')+'<p class="mut">'+esc(r.note)+' <a href="/signup.html">Create free account</a></p>'}
+ }catch(err){show(m,'err',err.message)}btn.disabled=false});

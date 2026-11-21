@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/css/site.css"><title>My unclaimed dividends - DhanKhoj</title></head><body><div class="wrap"><header class="top"><a class="logo" href="/"><img src="/favicon.svg" width="30" height="30" alt="">DhanKhoj</a><nav id="nav"><a href="/claim.html">How to claim</a><a href="/upgrade.html">Pricing</a></nav></header>
+
+<h1>My unclaimed dividends</h1>
+<div class="tabs"><a href="/dashboard.html">Dashboard</a><a href="/account.html">Profile</a><a href="/account.html#alerts">Alerts</a><a href="/account.html#plan">Plan &amp; payments</a></div>
+<div id="msg" class="msg hide"></div>
+<div id="verify" class="hide"><div class="banner"><span><b>Confirm your email to see your results.</b> We sent a link to your inbox.</span><button id="bresend" class="ghost">Send the link again</button></div><div id="vmsg" class="msg hide"></div><div id="vdev" class="msg hide"></div></div>
+<div id="main" class="hide">
+ <div id="phonebar" class="banner hide"><span>Want SMS or WhatsApp alerts too? Verify your mobile number first.</span><a class="btn" style="margin:0" href="/account.html#alerts">Verify mobile</a></div>
+ <div class="card"><div class="mut">Likely unclaimed in the companies you can see</div><div class="big" id="tot"></div><div class="mut" id="who"></div>
+  <div id="planbox" style="margin-top:12px"></div></div>
+ <div id="needpan" class="card hide" style="margin-top:14px;border:2px solid var(--gold);background:#fff9ec"><h2 style="margin-top:0">One step left: add your PAN to start the search</h2>
+  <p>We search the unclaimed-dividend lists with your <b>PAN</b> as the unique key, together with your name and any demat (DP-Client ID) or folio numbers you add. You can save up to 5 IDs.</p>
+  <a class="btn" style="margin:0" href="/account.html#identity">Add PAN &amp; demat IDs</a></div>
+ <div id="results">
+ <div id="tip" class="banner hide"><span>Tip: add your <b>demat (DP-Client) IDs or folio numbers</b> - a match on them is the strongest proof a dividend is yours.</span><a class="btn" style="margin:0" href="/account.html#identity">Add IDs</a></div>
+ <div id="locked" class="lock hide" style="margin-top:14px"></div>
+ <h2 style="margin-top:26px">Likely matches</h2><div class="card" style="overflow:auto"><table><thead><tr><th></th><th>Company</th><th>Type / FY</th><th>Folio</th><th class="num">Shares</th><th class="num">Amount</th><th>Deadline (est.)</th></tr></thead><tbody id="rows"></tbody></table></div>
+ <div class="card" style="margin-top:14px"><h3>Want an expert to claim for you? <span class="pill paid">optional, paid</span></h3>
+  <p class="mut">Tick the entries above, then send a request. A verified CS / CA from our panel sends you a written quote first; nothing starts or is charged until you accept. You can always claim yourself for free - <a href="/claim.html">see the steps</a>.</p>
+  <label for="cnotes">Notes for the expert <small>optional - e.g. shareholder deceased, lost certificates, address changed</small></label><textarea id="cnotes" maxlength="500"></textarea>
+  <label class="chk"><input id="cconsent" type="checkbox"> I agree that DhanKhoj shares my name, contact details and the selected dividend entries (including full folio numbers) with the assigned professional so they can prepare my claim.</label>
+  <button id="creq">Request expert help</button><div id="cmsg" class="msg hide"></div></div>
+ <div class="card hide" id="myclaims" style="margin-top:14px"><h3>My expert requests</h3><div id="claimlist"></div></div>
+ <h2 style="margin-top:26px">Weaker possible matches</h2><div class="card" style="overflow:auto"><table><tbody id="rows2"></tbody></table><p class="mut">Amounts are hidden for weak matches because they may belong to someone else. These share parts of your name but PIN / folio did not agree. Add your folio or PIN under <a href="/account.html">Profile</a> to confirm or remove them.</p></div>
+ <div class="card" style="margin-top:20px"><h3>What to do next</h3><ol><li>Check the folio number against your own records or the company's list.</li><li>Contact the company's registrar (RTA) with folio, PAN, ID proof and a cancelled cheque.</li><li>If the date has passed, the money may be with the IEPF: <a href="/claim.html">file Form IEPF-5</a>.</li></ol></div>
+ </div>
+</div>
+<footer><div class="wrap">DhanKhoj is an independent information service, not affiliated with SEBI, the IEPF Authority, any exchange or company. <a href="/terms.html">Terms &amp; refunds</a> - <a href="/privacy.html">Privacy</a> - <a href="/claim.html">How to claim</a></div></footer></div><script src="/js/common.js"></script><script src="/js/dashboard.js"></script></body></html>

@@ -1,0 +1,32 @@
+let TOK='';const H=()=>({'X-Admin-Token':TOK});const m=$('#msg');
+async function adm(path,opt={}){const r=await fetch(path,{...opt,headers:{...H(),...(opt.headers||{})}});const j=await r.json();if(!j.ok)throw new Error(j.error||'failed');return j}
+async function load(){TOK=$('#tok').value;try{const s=await adm('/api/admin/stats');$('#main').classList.remove('hide');m.classList.add('hide');
+ $('#ov').textContent=`companies covered ${s.companies_covered}/${s.companies_known}\nrecords ${s.records}\nvalue ${inr(s.amount)}\naccounts ${s.accounts} (confirmed ${s.subscribers_active}, unconfirmed ${s.subscribers_pending}) paid plans active ${s.paid_plans_active}\nrevenue ${inr(s.revenue_inr)} payments awaiting review ${s.payments_pending_review}\nmatches ${s.matches}\noutbox ${JSON.stringify(s.outbox)}`+(s.failed_messages.length?'\nrecent delivery errors:\n'+s.failed_messages.map(f=>`#${f.id} ${f.channel} ${f.err}`).join('\n'):'');
+ $('#lists').innerHTML=s.recent_lists.map(l=>`<tr><td>${esc(l.company)}</td><td>${esc(l.fy||'')}</td><td>${esc(l.dtype||'')}</td><td class="num">${l.n_rows}</td><td class="num">${inr(l.total)}</td><td>${esc(l.iepf_due||'')}</td></tr>`).join('')}catch(e){show(m,'err',e.message)}}
+async function loadClaims(){const r=await adm('/api/admin/claims');const ex=r.experts.filter(e=>e.status==='verified');
+ $('#claims').innerHTML=r.claims.map(c=>`<div class="expert" style="display:block"><b>#${c.id} ${esc(c.sname)}</b> <span class="pill">${esc(c.status)}</span> <span class="mut">${esc(c.semail)} ${esc(c.sphone)} - ${esc(c.created_at)}</span>
+ <div class="mut">${c.items.map(i=>esc(i.company)+' folio '+esc(i.folio)+' '+inr(i.amount)).join('; ')}${c.notes?'<br>Notes: '+esc(c.notes):''}</div>
+ <div class="row" style="margin-top:8px"><div><label>Status</label><select data-k="status">${['new','quoted','accepted','assigned','in_progress','completed','cancelled'].map(s=>`<option ${s===c.status?'selected':''}>${s}</option>`).join('')}</select></div>
+ <div><label>Expert</label><select data-k="expert_id"><option value="">-</option>${ex.map(e=>`<option value="${e.id}" ${e.id===c.expert_id?'selected':''}>${esc(e.name)} (${esc(e.profession)})</option>`).join('')}</select></div></div>
+ <div class="row"><div><label>Quote (Rs)</label><input type="text" data-k="quote_amount" value="${c.quote_amount??''}"></div><div><label>Quote note</label><input type="text" data-k="quote_note" value="${esc(c.quote_note||'')}"></div></div>
+ <button class="saveclaim" data-id="${c.id}">Save</button></div>`).join('')||'None.';
+ $('#experts').innerHTML=r.experts.map(e=>`<div class="expert"><div><b>${esc(e.name)}</b> <span class="pill ${e.status==='verified'?'':'low'}">${esc(e.status)}</span><br><span class="mut">${esc(e.profession)} - ${esc(e.membership_no)} - ${esc(e.city)} - ${esc(e.email)} ${esc(e.phone)}</span></div>
+ <div><button class="exset" data-id="${e.id}" data-s="verified">Verify</button> <button class="exset ghost" data-id="${e.id}" data-s="suspended">Suspend</button></div></div>`).join('')||'None.'}
+document.addEventListener('click',async e=>{const b=e.target.closest('.saveclaim,.exset');if(!b)return;try{
+ if(b.classList.contains('exset'))await adm('/api/admin/expert/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:+b.dataset.id,status:b.dataset.s})});
+ else{const box=b.parentElement,v=k=>box.querySelector('[data-k='+k+']').value;await adm('/api/admin/claim/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:+b.dataset.id,status:v('status'),expert_id:v('expert_id')?+v('expert_id'):null,quote_amount:v('quote_amount'),quote_note:v('quote_note')})})}
+ show(m,'ok','Saved.');loadClaims()}catch(err){show(m,'err',err.message)}});
+$('#go').addEventListener('click',()=>{load();loadClaims().catch(()=>{})});
+$('#tick').addEventListener('click',async()=>{try{const r=await adm('/api/admin/tick',{method:'POST'});show(m,'ok','Worker ran: '+JSON.stringify(r));load()}catch(e){show(m,'err',e.message)}});
+$('#up').addEventListener('click',async()=>{const f=$('#uf').files[0];if(!f||!$('#uc').value)return show(m,'err','Pick a file and enter the company name.');
+ const q=new URLSearchParams({company:$('#uc').value,filename:f.name,fy:$('#ufy').value,declared:$('#ud').value,type:$('#ut').value,url:$('#uu').value});
+ try{const r=await adm('/api/admin/ingest?'+q,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:f});show(m,r.status==='ok'?'ok':'err',`${r.status}: ${r.rows??0} rows, estimated IEPF date ${r.iepf_due_est||'n/a'}${r.skipped?', '+r.skipped+' lines skipped':''}`);setTimeout(load,1500)}catch(e){show(m,'err',e.message)}});
+
+async function loadPays(){const r=await adm('/api/admin/payments');
+ $('#pays').innerHTML=r.payments.length?'<table><thead><tr><th>#</th><th>Who</th><th>How</th><th class="num">Amount</th><th>Status</th><th>Reference</th><th></th></tr></thead><tbody>'+r.payments.map(p=>`<tr><td>${p.id}</td><td>${esc(p.name||'(deleted)')}<br><span class="mut">${esc(p.email||'')} ${esc(p.phone||'')}</span></td><td>${esc(p.provider)} ${esc(p.method||'')}<br><span class="mut">${esc(p.item||'')}</span></td><td class="num">${inr(p.amount)}</td>
+ <td><span class="pill ${p.status==='paid'?'':p.status==='pending_review'?'low':'warn'}">${p.status==='pending_review'?'awaiting':esc(p.status)}</span><br><span class="mut">${esc((p.paid_at||p.created_at||'').slice(0,16))}</span></td><td class="mut">${esc(p.utr||p.ref||p.note||'')}</td>
+ <td>${p.status==='pending_review'?`<button class="rev" data-id="${p.id}" data-a="1">Approve</button> <button class="rev ghost" data-id="${p.id}" data-a="0">Reject</button>`:''}</td></tr>`).join('')+'</tbody></table>':'None.'}
+document.addEventListener('click',async e=>{const b=e.target.closest('.rev');if(!b)return;
+ try{await adm('/api/admin/payment/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:+b.dataset.id,approve:b.dataset.a==='1'})});show(m,'ok','Done.');loadPays();load()}catch(err){show(m,'err',err.message)}});
+$('#grant').addEventListener('click',async()=>{try{const r=await adm('/api/admin/grant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('#ge').value,tier:$('#gt').value,days:+$('#gd').value,note:$('#gn').value})});show(m,'ok',r.tier+' active until '+r.plan_until);loadPays()}catch(err){show(m,'err',err.message)}});
+$('#go').addEventListener('click',()=>{loadPays().catch(()=>{})});

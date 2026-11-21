@@ -1,0 +1,65 @@
+const m=$('#msg');let PLAN=null,UPI=null,USER=null,period='yearly',sel=null;
+const per=p=>p==='yearly'?'year':'month';
+function done(t){$('#opts').classList.add('hide');$('#okbox').classList.remove('hide');$('#oktext').textContent=t}
+function loadScript(src){return new Promise((ok,no)=>{if(window.Razorpay)return ok();const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('Could not load the payment window. Check your connection or ad-blocker.'));document.head.appendChild(s)})}
+const T=k=>PLAN.tiers.find(t=>t.key===k);
+const priceOf=(t,p)=>p==='yearly'?t.yearly:t.monthly;
+function cards(){const cur=PLAN.current&&PLAN.current.active?PLAN.current.tier:null;
+ $('#cards').innerHTML=PLAN.tiers.map(t=>{const y=period==='yearly',isCur=cur===t.key;
+  return `<div class="tier${t.popular?' pop':''}${sel&&sel.key===t.key?' sel':''}">${t.popular?'<div class="ribbon">Most popular</div>':''}${isCur?'<div class="ribbon cur">Your plan</div>':''}
+  <h3>${esc(t.label)}</h3>
+  <div class="amt">${inr(y?t.yearly_per_month:t.monthly)}<small> / month</small></div>
+  <div class="sub">${y?`<s>${inr(t.monthly)}</s> billed ${inr(t.yearly)} a year <span class="save">save ${t.save_percent}%</span>`:`billed monthly - or <b>${inr(t.yearly)}</b> a year (save ${t.save_percent}%)`}</div>
+  <ul>${t.features.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>
+  <button type="button" class="choose" data-t="${t.key}">${isCur?'Extend ':'Choose '}${esc(t.label)}</button></div>`}).join('');
+ $('#saveall').textContent='save up to '+Math.max(...PLAN.tiers.map(t=>t.save_percent))+'%';
+ $('#pm').classList.toggle('on',period==='monthly');$('#py').classList.toggle('on',period==='yearly')}
+function checkout(){if(!sel)return;const p=period,price=priceOf(sel,p);UPI=null;$('#upi').classList.add('hide');m.classList.add('hide');$('#okbox').classList.add('hide');
+ $('#checkout').classList.remove('hide');$('#selname').textContent=sel.label+' membership';$('#selper').textContent='- '+(p==='yearly'?'1 year':'1 month')+', one-time payment';$('#price').textContent=inr(price);
+ let note='';const c=PLAN.current;
+ if(c&&c.active){const carry=(PLAN.carry||{})[sel.key]||0;
+  note=c.tier===sel.key?`Your new period starts after your current ${c.label} plan ends on ${c.until}.`:(carry>0?`Your remaining ${c.days_left} days of ${c.label} are converted to ${carry} days of ${sel.label} and added to this purchase.`:'')}
+ $('#selnote').textContent=note;
+ if(!USER)return;
+ if(!USER.email_verified){$('#opts').classList.add('hide');show(m,'err','Please confirm your email address first (check your inbox for the link), then come back here.');return}
+ if(!PLAN.gateway&&!PLAN.upi){$('#opts').classList.add('hide');$('#none').classList.remove('hide');return}
+ $('#opts').classList.remove('hide');$('#gw').classList.toggle('hide',!PLAN.gateway);$('#upibox').classList.toggle('hide',!PLAN.upi);
+ $('#bpay').textContent=(PLAN.gateway==='mock'?'Pay (test mode) ':'Pay ')+inr(price);$('#checkout').scrollIntoView({behavior:'smooth'})}
+(async()=>{USER=await session();PLAN=await api('/api/plan');$('#free').textContent=PLAN.free_companies;
+ $('#freenote').textContent='Free plan: '+PLAN.free.features.join(' - ')+'.';
+ if(PLAN.support_email)$('#sup').innerHTML='Write to <a href="mailto:'+esc(PLAN.support_email)+'">'+esc(PLAN.support_email)+'</a>.';
+ const q=new URLSearchParams(location.search);if(q.get('period')==='monthly'||q.get('period')==='yearly')period=q.get('period');
+ cards();const pre=T(q.get('plan'));if(pre){sel=pre;cards();if(USER){checkout();if(q.get('go')&&USER.email_verified&&PLAN.gateway)pay()}else openLogin()}})();
+document.addEventListener('click',e=>{const b=e.target.closest('.choose'),s=e.target.closest('.seg button');
+ if(s){period=s.dataset.p;cards();if(sel)checkout();return}
+ if(b){sel=T(b.dataset.t);go()}});
+async function pay(){const b=$('#bpay');b.disabled=true;m.classList.add('hide');
+ try{const o=await api('/api/pay/order',{tier:sel.key,period});
+  if(o.provider==='mock'){await api('/api/pay/mock-confirm',{payment_id:o.payment_id});return done('Test payment done - your '+sel.label+' plan is active.')}
+  await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+  const rz=new Razorpay({key:o.key_id,amount:o.amount_paise,currency:o.currency,name:o.name,description:o.description,order_id:o.order_id,prefill:o.prefill,theme:{color:'#3446E0'},
+   handler:async r=>{try{await api('/api/pay/confirm',r);done('Payment received - your '+sel.label+' plan is active. A receipt was emailed to you.')}catch(err){show(m,'err',err.message+' If money was deducted, your plan activates automatically within a few minutes.')}},
+   modal:{ondismiss:()=>{b.disabled=false}}});
+  rz.on('payment.failed',r=>{show(m,'err','Payment failed: '+((r.error&&r.error.description)||'please try again.'));b.disabled=false});rz.open()}
+ catch(err){show(m,'err',err.message);b.disabled=false}}
+$('#bpay').addEventListener('click',pay);
+$('#bupi').addEventListener('click',async()=>{try{UPI=await api('/api/pay/upi/start',{tier:sel.key,period});$('#upi').classList.remove('hide');$('#uvpa').textContent=UPI.vpa;$('#upayee').textContent=UPI.payee;$('#uamt').textContent=inr(UPI.amount);$('#uref').textContent=UPI.ref;$('#ulink').href=UPI.link}catch(err){show(m,'err',err.message)}});
+$('#butr').addEventListener('click',async()=>{try{await api('/api/pay/upi/submit',{payment_id:UPI.payment_id,utr:$('#utr').value});done('Thank you - we received your reference and will activate your '+sel.label+' plan after matching it with our bank statement (usually a few working hours). You will get an email.')}catch(err){show(m,'err',err.message)}});
+
+// ---- sign-in pop-up: pricing stays public, sign-in is asked only when a plan is chosen
+const L=$('#lmod'),lm=$('#lmsg');
+function gnext(){return '/upgrade.html?plan='+(sel?sel.key:'')+'&period='+period+'&go=1'}
+function openLogin(){initGoogle(gnext());$('#lsel').textContent=sel?sel.label+' membership - '+(period==='yearly'?'yearly':'monthly')+', '+inr(priceOf(sel,period)):'';lm.classList.add('hide');L.classList.remove('hide');$('#lem').focus()}
+function closeLogin(){L.classList.add('hide')}
+$('#lclose').addEventListener('click',closeLogin);
+L.addEventListener('click',e=>{if(e.target===L)closeLogin()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLogin()});
+$('#lform').addEventListener('submit',async e=>{e.preventDefault();const b=$('#lgo');b.disabled=true;lm.classList.add('hide');
+ try{const r=await api('/api/auth/login',{email:$('#lem').value,password:$('#lpw').value});
+  ME.user=r.user;ME.loaded=true;USER=r.user;$('#lpw').value='';PLAN=await api('/api/plan');closeLogin();buildNav();cards();checkout();if(USER.email_verified&&PLAN.gateway)pay()}
+ catch(err){show(lm,'err',err.message)}finally{b.disabled=false}});
+
+// plan clicked: look at the live session first (it may have changed in another tab), then sign in or go straight to payment
+async function go(){ME.loaded=false;USER=await session();cards();if(!USER){openLogin();return}
+ PLAN=await api('/api/plan');buildNav();
+ checkout();if(USER.email_verified&&PLAN.gateway)pay()}
