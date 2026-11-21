@@ -1,12 +1,14 @@
 const m=$('#msg');let P=null;
 const list=v=>v.split(',').map(s=>s.trim()).filter(Boolean);
-function dpRows(vals){const max=P.max_dp,v=vals.length?vals:[''];
+function dpRows(vals,locked){const max=P.max_dp,v=vals.length?vals:[''];
+ if(locked&&vals.length){$('#dps').innerHTML=vals.map(x=>`<div class="dprow" style="margin:6px 0"><input type="text" class="dp" value="${esc(x)}" disabled aria-label="Saved DP-Client ID or folio" style="margin:0;max-width:340px"></div>`).join('');$('#adddp').classList.add('hide');$('#dphint').innerHTML='<span class="pill">Saved</span> These IDs are locked and cannot be changed here. If one is wrong, contact support.';return}
+ $('#dphint').textContent='Demat: DP ID + Client ID together, e.g. IN30047610123456 (NSDL) or 1208160000123456 (CDSL). Physical shares: the folio number on your certificate. Spaces and hyphens are ignored. You can save these once, so check them carefully.';
  $('#dps').innerHTML=v.map(x=>`<div class="dprow" style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="text" class="dp" maxlength="30" placeholder="e.g. IN30047610123456" value="${esc(x)}" aria-label="DP-Client ID or folio" style="margin:0;max-width:340px">${v.length>1?'<button type="button" class="rmdp ghost" style="margin:0" aria-label="remove">&times;</button>':''}</div>`).join('');
  $('#adddp').classList.toggle('hide',v.length>=max)}
 const dpVals=()=>[...document.querySelectorAll('.dp')].map(i=>i.value.trim()).filter(Boolean);
 function fill(p){P=p;$('#fn').value=p.first_name;$('#mn').value=p.middle_name;$('#ln').value=p.last_name;$('#em').value=p.email;$('#mo').value=p.mobile;$('#am').value=p.alt_mobile;
  $('#dob').value=p.dob;$('#fa').value=p.father_name;$('#ad').value=p.address;$('#ci').value=p.city;$('#st').value=p.state;$('#pin').value=p.pincode;$('#lg').value=p.lang;$('#al').value=p.aliases.join(', ');
- $('#maxdp').textContent=p.max_dp;dpRows(p.folios);
+ $('#maxdp').textContent=p.max_dp;dpRows(p.folios,p.folios.length>0);$('#bi').textContent=(p.pan_set&&p.folios.length)?'Save name spellings':'Save PAN & IDs';
  if(p.pan_set){$('#pan').value=p.pan_masked;$('#pan').disabled=true;$('#panhint').innerHTML='<span class="pill">PAN saved</span> It cannot be changed here. If it is wrong, contact support.'}
  else{$('#pan').disabled=false;$('#pan').value='';$('#panhint').textContent='Required to start the search. Check it carefully - once saved it cannot be changed.'}
  $('#emst').innerHTML=p.email_verified?'<span class="pill">email confirmed</span>':'<span class="pill warn">not confirmed yet</span> - use the link we emailed';
@@ -35,10 +37,12 @@ function goHash(){const id=location.hash.slice(1);const el=id&&document.getEleme
 window.addEventListener('hashchange',goHash);
 $('#adddp').addEventListener('click',()=>{const v=[...document.querySelectorAll('.dp')].map(i=>i.value);if(v.length<P.max_dp){v.push('');dpRows(v);document.querySelectorAll('.dp')[v.length-1].focus()}});
 document.addEventListener('click',e=>{const b=e.target.closest('.rmdp');if(!b)return;const rows=[...document.querySelectorAll('.dprow')];const i=rows.indexOf(b.closest('.dprow'));const v=[...document.querySelectorAll('.dp')].map(x=>x.value);v.splice(i,1);dpRows(v)});
-$('#fi').addEventListener('submit',async e=>{e.preventDefault();const x=$('#imsg');x.classList.add('hide');const body={folios:dpVals(),aliases:list($('#al').value)};
- if(!P.pan_set&&$('#pan').value){if(!PANRE.test($('#pan').value))return show(x,'err',$('#panhint').textContent||'Check your PAN.');if(!confirm('Save PAN '+$('#pan').value+'? It cannot be changed afterwards.'))return;body.pan=$('#pan').value}
- else if(!P.pan_set)return show(x,'err','Enter your PAN - the search cannot start without it.');
- try{fill(await api('/api/account/profile',body));show(x,'ok','Saved. We are searching the lists with your PAN and IDs - see your dashboard.')}catch(err){show(x,'err',err.message)}});
+$('#fi').addEventListener('submit',async e=>{e.preventDefault();const x=$('#imsg');x.classList.add('hide');const body={aliases:list($('#al').value)};
+ const ids=P.folios.length?[]:dpVals();if(ids.length)body.folios=ids;
+ if(!P.pan_set){const v=$('#pan').value;if(!v)return show(x,'err','Enter your PAN - the search cannot start without it.');if(!PANRE.test(v))return show(x,'err',$('#panhint').textContent||'Check your PAN.');body.pan=v}
+ const what=[body.pan?'PAN '+body.pan:'',ids.length?ids.length+' DP-Client ID / folio number(s)':''].filter(Boolean).join(' and ');
+ if(what&&!confirm('Save '+what+'? They cannot be changed afterwards.'))return;
+ try{fill(await api('/api/account/profile',body));show(x,'ok',what?'Saved and locked. We are searching the lists with your PAN and IDs - see your dashboard.':'Saved.')}catch(err){show(x,'err',err.message)}});
 $('#fp').addEventListener('submit',async e=>{e.preventDefault();const x=$('#pmsg');x.classList.add('hide');
  try{fill(await api('/api/account/profile',{first_name:$('#fn').value,middle_name:$('#mn').value,last_name:$('#ln').value,mobile:$('#mo').value,alt_mobile:$('#am').value,dob:$('#dob').value,father_name:$('#fa').value,address:$('#ad').value,
   city:$('#ci').value,state:$('#st').value,pincode:$('#pin').value,lang:$('#lg').value}));show(x,'ok','Saved. We re-checked the lists with your updated details.')}catch(err){show(x,'err',err.message)}});

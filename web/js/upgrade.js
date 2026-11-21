@@ -38,9 +38,9 @@ async function pay(){const b=$('#bpay');b.disabled=true;m.classList.add('hide');
   if(o.provider==='mock'){await api('/api/pay/mock-confirm',{payment_id:o.payment_id});return done('Test payment done - your '+sel.label+' plan is active.')}
   await loadScript('https://checkout.razorpay.com/v1/checkout.js');
   const rz=new Razorpay({key:o.key_id,amount:o.amount_paise,currency:o.currency,name:o.name,description:o.description,order_id:o.order_id,prefill:o.prefill,theme:{color:'#3446E0'},
-   handler:async r=>{try{await api('/api/pay/confirm',r);done('Payment received - your '+sel.label+' plan is active. A receipt was emailed to you.')}catch(err){show(m,'err',err.message+' If money was deducted, your plan activates automatically within a few minutes.')}},
-   modal:{ondismiss:()=>{b.disabled=false}}});
-  rz.on('payment.failed',r=>{show(m,'err','Payment failed: '+((r.error&&r.error.description)||'please try again.'));b.disabled=false});rz.open()}
+   handler:async r=>{window.PAYING=false;try{await api('/api/pay/confirm',r);done('Payment received - your '+sel.label+' plan is active. A receipt was emailed to you.')}catch(err){show(m,'err',err.message+' If money was deducted, your plan activates automatically within a few minutes.')}},
+   modal:{ondismiss:()=>{b.disabled=false;window.PAYING=false}}});
+  rz.on('payment.failed',r=>{show(m,'err','Payment failed: '+((r.error&&r.error.description)||'please try again.'));b.disabled=false;window.PAYING=false});window.PAYING=true;rz.open()}
  catch(err){show(m,'err',err.message);b.disabled=false}}
 $('#bpay').addEventListener('click',pay);
 $('#bupi').addEventListener('click',async()=>{try{UPI=await api('/api/pay/upi/start',{tier:sel.key,period});$('#upi').classList.remove('hide');$('#uvpa').textContent=UPI.vpa;$('#upayee').textContent=UPI.payee;$('#uamt').textContent=inr(UPI.amount);$('#uref').textContent=UPI.ref;$('#ulink').href=UPI.link}catch(err){show(m,'err',err.message)}});

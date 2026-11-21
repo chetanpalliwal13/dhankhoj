@@ -390,7 +390,18 @@ class Auth:
     def user_for(self, token):
         if not token:
             return None
-        return self.db.one('SELECT s.* FROM sessions x JOIN subscribers s ON s.id=x.user_id WHERE x.token_hash=? AND x.expires_at>?', (_sha(token), time.time()))
+        t = time.time()
+        r = self.db.one('SELECT s.*, x.last_seen AS _seen, x.created_at AS _made FROM sessions x JOIN subscribers s ON s.id=x.user_id WHERE x.token_hash=? AND x.expires_at>?', (_sha(token), t))
+        if not r:
+            return None
+        idle = self.st.session_idle_min
+        seen = r['_seen'] or r['_made'] or t
+        if idle > 0 and t - seen > (idle + 1) * 60:  # idle too long: end the session (the page also signs out after `idle` minutes)
+            self.db.x('DELETE FROM sessions WHERE token_hash=?', (_sha(token),))
+            return None
+        if t - seen > 20:
+            self.db.x('UPDATE sessions SET last_seen=? WHERE token_hash=?', (t, _sha(token)))
+        return r
 
     def logout(self, token):
         if token:
@@ -398,7 +409,7 @@ class Auth:
 
     def session_info(self, u):
         return {'first_name': self._first(u), 'name': u['name'], 'email': mask_email(u['email']), 'email_verified': bool(u['email_verified_at']),
-                'phone_verified': bool(u['phone_verified_at']), 'plan': self.svc.plan_state(u)}
+                'phone_verified': bool(u['phone_verified_at']), 'plan': self.svc.plan_state(u), 'idle_min': self.st.session_idle_min}
 
     # -------------------------------------------------------------- forgot / reset / change password
     def forgot(self, email):
@@ -484,7 +495,12 @@ class Auth:
                 sets.update(pan_hash=self.vault.index(pan), pan_enc=self.vault.seal(pan), pan_last4=pan[-4:])
                 pan_new = True
         if 'folios' in p:
-            sets['folios'] = json.dumps(clean_folios(p['folios'], self.st.max_dp_ids))
+            new_f = clean_folios(p['folios'], self.st.max_dp_ids)
+            old_f = json.loads(u['folios'] or '[]')
+            if old_f and new_f != old_f:  # like the PAN, the demat / folio IDs are saved once and then locked
+                raise ApiError('Your DP-Client IDs / folio numbers are already saved and cannot be changed here. If one is wrong, write to %s.' % (self.st.support_email or 'us'), 403)
+            if not old_f:
+                sets['folios'] = json.dumps(new_f)
         if 'aliases' in p:
             sets['aliases'] = json.dumps([clean_name(a) for a in p['aliases'] if str(a).strip()][:3])
         if sets:

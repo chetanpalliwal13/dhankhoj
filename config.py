@@ -52,6 +52,7 @@ class Settings:
         self.salt = env('APP_SALT', 'change-me')
         # accounts / sessions / field encryption
         self.data_key = env('DATA_KEY', '')  # encrypts PAN at rest; long random string. Falls back to APP_SALT (set DATA_KEY in production)
+        self.session_idle_min = int(env('SESSION_IDLE_MIN', '5'))  # sign out after this many idle minutes (0 = never)
         self.session_days = int(env('SESSION_DAYS', '14'))
         self.verify_ttl = int(env('VERIFY_TTL', str(24 * 3600)))   # email-verification link lifetime (seconds)
         self.reset_ttl = int(env('RESET_TTL', '3600'))             # password-reset link lifetime (seconds)

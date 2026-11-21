@@ -40,3 +40,15 @@ async function initGoogle(next){if(!document.querySelector('.gwrap'))return;if(!
 const GERR={off:'Google sign-in is not set up yet. Please use your email and password.',cancelled:'Google sign-in was cancelled.',state:'That Google sign-in session expired. Please try again.',failed:'Google sign-in did not work. Please try again or use your email.',unverified:'Google has not verified that email address, so we cannot use it.'};
 function googleError(el){const g=new URLSearchParams(location.search).get('gerr');if(g&&el)show(el,'err',GERR[g]||GERR.failed)}
 if(!document.getElementById('lmod'))initGoogle();
+
+// ---- signed-in visitors: skip the home page, and sign out after a few idle minutes
+(async function(){const u=await session();if(!u)return;
+  if((location.pathname==='/'||location.pathname==='/index.html')&&!/[?&]home=1/.test(location.search)&&!(document.referrer&&new URL(document.referrer).origin===location.origin)){location.replace('/dashboard.html');return}
+  const idle=(u.idle_min||0)*60000;if(!idle)return;
+  let last=Date.now(),pinged=Date.now(),warned=false,toast=null;
+  const bump=()=>{last=Date.now();if(warned){warned=false;if(toast){toast.remove();toast=null}}if(Date.now()-pinged>60000){pinged=Date.now();api('/api/session/ping',{}).catch(()=>{})}};
+  ['mousemove','mousedown','keydown','scroll','touchstart','click'].forEach(ev=>document.addEventListener(ev,bump,{passive:true}));
+  setInterval(async()=>{const left=idle-(Date.now()-last);
+    if(left<=0){try{await api('/api/auth/logout',{})}catch(_){}location.href='/signin.html?idle=1';return}
+    if(left<=30000&&!warned&&!window.PAYING){warned=true;toast=document.createElement('div');toast.className='idle-toast';toast.setAttribute('role','alert');toast.innerHTML='<span>You will be signed out soon because you have been inactive.</span>';const b=document.createElement('button');b.type='button';b.textContent='Stay signed in';b.addEventListener('click',bump);toast.appendChild(b);document.body.appendChild(toast)}
+    if(window.PAYING){last=Date.now();if(Date.now()-pinged>60000){pinged=Date.now();api('/api/session/ping',{}).catch(()=>{})}}},5000)})();

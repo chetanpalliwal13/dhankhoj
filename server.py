@@ -310,6 +310,9 @@ def make_handler(svc, st, rl):
                     self.limit('lic:' + str(d.get('email', '')).lower(), 10, 900, 'Too many sign-in attempts. Please wait a few minutes.')
                     tok, usr = au.login(d.get('email', ''), d.get('password', ''), ip)
                     return self.json({'ok': True, 'user': au.session_info(usr)}, cookies=[self.set_cookie(tok, st.session_days * 86400)])
+                if u.path == '/api/session/ping':
+                    self.user()
+                    return self.json({'ok': True})
                 if u.path == '/api/auth/logout':
                     self.body_json()
                     au.logout(self.session_token())

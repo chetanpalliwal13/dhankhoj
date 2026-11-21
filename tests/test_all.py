@@ -282,11 +282,23 @@ class Profile(unittest.TestCase):
         self.assertEqual(c.exception.code, 409); self.assertIsNone(self.au._get(u2['id'])['pan_hash']); self.au.update_profile(u2, {'pan': 'XYZPD9999Z'}); self.assertTrue(self.au._get(u2['id'])['pan_hash'])
     def test_up_to_five_dp_ids_normalised_and_deduplicated(self):
         p = self.au.update_profile(self.u, {'folios': ['in300118-11111111', 'IN30011811111111', ' 1208 1600 0012 3456 ', '', 'FOLIO 77']}); self.assertEqual(p['folios'], ['IN30011811111111', '1208160000123456', 'FOLIO77']); self.assertEqual(p['max_dp'], 5)
-        self.au.update_profile(self.au._get(self.u['id']), {'folios': ['AAAA1', 'BBBB2', 'CCCC3', 'DDDD4', 'EEEE5']})
-        with self.assertRaises(ApiError) as c: self.au.update_profile(self.au._get(self.u['id']), {'folios': ['AAAA1', 'BBBB2', 'CCCC3', 'DDDD4', 'EEEE5', 'FFFF6']})
+        with self.assertRaises(ApiError) as c: self.au.update_profile(self.au._get(self.u['id']), {'folios': ['AAAA1', 'BBBB2', 'CCCC3', 'DDDD4', 'EEEE5']})
+        self.assertIn('already saved', c.exception.msg)  # once saved the IDs are locked
+        self.assertEqual(json.loads(self.au._get(self.u['id'])['folios']), ['IN30011811111111', '1208160000123456', 'FOLIO77'])
+    def test_too_many_and_bad_ids_rejected_on_first_save(self):
+        u, _ = register(self.au, email='g@x.in', pan='QWEPD1111Q', mobile='9123456781', pincode=None)
+        with self.assertRaises(ApiError) as c: self.au.update_profile(u, {'folios': ['AAAA1', 'BBBB2', 'CCCC3', 'DDDD4', 'EEEE5', 'FFFF6']})
         self.assertIn('up to 5', c.exception.msg)
-        with self.assertRaises(ApiError): self.au.update_profile(self.au._get(self.u['id']), {'folios': ['ab']})
-        self.assertEqual(len(json.loads(self.au._get(self.u['id'])['folios'])), 5)  # the failed save changed nothing
+        with self.assertRaises(ApiError): self.au.update_profile(u, {'folios': ['ab']})
+        self.assertEqual(self.au._get(u['id'])['folios'], '[]')
+    def test_ids_locked_after_first_save_but_same_list_is_fine(self):
+        self.au.update_profile(self.u, {'folios': ['AAAA1']})
+        self.au.update_profile(self.au._get(self.u['id']), {'folios': ['aaaa1']})  # unchanged -> no error
+        with self.assertRaises(ApiError) as c: self.au.update_profile(self.au._get(self.u['id']), {'folios': ['AAAA1', 'ZZZZ9']})
+        self.assertEqual(c.exception.code, 403)
+    def test_pan_locked(self):
+        with self.assertRaises(ApiError) as c: self.au.update_profile(self.au._get(self.u['id']), {'pan': 'QWEPD1111Q'})
+        self.assertEqual(c.exception.code, 403)
     def test_dp_id_in_profile_finds_the_holding(self):
         u, _ = register(self.au, email='f@x.in', pan='XYZPD9999Z', mobile='9123456780', pincode=None); self.au.update_profile(u, {'first_name': 'Someone', 'last_name': 'Else'})
         self.assertEqual(self.db.one('SELECT COUNT(*) n FROM matches WHERE sub_id=?', (u['id'],))['n'], 0)
@@ -1015,6 +1027,20 @@ class PanMessages(unittest.TestCase):
         self.assertIn('exactly 10', self.msg('ABCDE123F')); self.assertIn('4th letter', self.msg('ABCDE1234F')); self.assertIn('5 letters', self.msg('1234567890'))
     def test_valid(self):
         from auth import clean_pan; self.assertEqual(clean_pan(' abcpe1234f '), 'ABCPE1234F')
+
+
+class IdleSession(unittest.TestCase):
+    def setUp(self): self.st, self.db, self.svc, self.au, *_ = stack(); self.u, _ = register(self.au)
+    def test_active_session_stays_and_idle_one_ends(self):
+        tok, u = self.au.login('a@x.in', 'Str0ng-pass!'); self.assertTrue(self.au.user_for(tok))
+        self.db.x('UPDATE sessions SET last_seen=?', (time.time() - 3 * 60,)); self.assertTrue(self.au.user_for(tok))  # 3 min idle: still in (limit is 5)
+        self.db.x('UPDATE sessions SET last_seen=?', (time.time() - 7 * 60,)); self.assertIsNone(self.au.user_for(tok))
+        self.assertEqual(self.db.one('SELECT COUNT(*) n FROM sessions')['n'], 0)
+    def test_activity_refreshes_last_seen(self):
+        tok, u = self.au.login('a@x.in', 'Str0ng-pass!'); self.db.x('UPDATE sessions SET last_seen=?', (time.time() - 4 * 60,)); self.au.user_for(tok)
+        self.assertGreater(self.db.one('SELECT last_seen FROM sessions')['last_seen'], time.time() - 5)
+    def test_idle_limit_zero_means_never(self):
+        self.st.session_idle_min = 0; tok, u = self.au.login('a@x.in', 'Str0ng-pass!'); self.db.x('UPDATE sessions SET last_seen=?', (time.time() - 86400,)); self.assertTrue(self.au.user_for(tok))
 
 
 if __name__ == '__main__':

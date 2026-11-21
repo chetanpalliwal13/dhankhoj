@@ -8,10 +8,10 @@
  <form id="fi" novalidate>
   <label for="pan">PAN <span class="req">*</span></label><input id="pan" type="text" maxlength="10" placeholder="ABCDE1234F" autocomplete="off" style="text-transform:uppercase;max-width:260px">
   <div class="hint" id="panhint"></div>
-  <label style="margin-top:16px">DP-Client IDs / folio numbers <small>up to <span id="maxdp">5</span></small></label>
+  <label style="margin-top:16px">DP-Client IDs / folio numbers <small>up to <span id="maxdp">5</span>, saved once</small></label>
   <div id="dps"></div>
   <button type="button" id="adddp" class="ghost" style="margin-top:6px">+ Add another ID</button>
-  <div class="hint">Demat: DP ID + Client ID together, e.g. IN30047610123456 (NSDL) or 1208160000123456 (CDSL). Physical shares: the folio number on your certificate. Spaces and hyphens are ignored.</div>
+  <div class="hint" id="dphint"></div>
   <label for="al">Other spellings of your name <small>comma separated - maiden name, old spelling</small></label><input id="al" type="text" maxlength="160">
   <button id="bi">Save PAN &amp; IDs</button><div id="imsg" class="msg hide"></div></form></div>
 
