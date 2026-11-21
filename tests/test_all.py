@@ -1074,5 +1074,36 @@ class DashSearch(unittest.TestCase):
         self.assertTrue(hasattr(S, 'make_handler'))
 
 
+class DummyData(unittest.TestCase):
+    def setUp(self):
+        self.st, self.db, self.svc, self.au, *_ = stack(dev_mode=True, dummy_data_email='dummy@x.in'); self.u, _ = register(self.au, email='dummy@x.in', mobile='9123456770', pan='ABCPD7777D')
+        self.other, _ = register(self.au, email='real@x.in', mobile='9123456771', pan='ABCPE7777E')
+    def test_table_filled_without_searching_and_max_ten(self):
+        r = self.svc.me(self.au._get(self.u['id'])); n = len(r['likely']) + len(r['possible']); self.assertTrue(r['sample']); self.assertTrue(1 <= n <= 10)
+    def test_every_search_changes_the_rows(self):
+        seen = set()
+        for _ in range(6):
+            r = self.svc.search(self.au._get(self.u['id']), ['name']); self.assertLessEqual(r['found'], 10); seen.add(tuple(sorted((i['folio'], i['amount']) for i in r['likely'] + r['possible'])))
+        self.assertGreater(len(seen), 1)
+        self.assertEqual(self.db.one("SELECT COUNT(*) n FROM lists WHERE file_hash LIKE ?", ('dummy:%d:%%' % self.u['id'],))['n'] > 0, True)
+        self.assertLessEqual(self.db.one("SELECT COUNT(*) n FROM matches WHERE sub_id=?", (self.u['id'],))['n'], 10)  # old sample rows are removed each time
+    def test_other_accounts_never_get_sample_data(self):
+        r = self.svc.me(self.au._get(self.other['id'])); self.assertFalse(r['sample']); self.assertEqual(self.db.one('SELECT COUNT(*) n FROM lists WHERE file_hash LIKE ?', ('dummy:%d:%%' % self.other['id'],))['n'], 0)
+    def test_off_unless_dev_mode(self):
+        os.environ['DUMMY_DATA_EMAIL'] = 'dummy@x.in'; os.environ.pop('DEV_MODE', None)
+        try: self.assertEqual(Settings().dummy_data_email, '')
+        finally: os.environ.pop('DUMMY_DATA_EMAIL')
+
+
+class NoBackAfterSignout(unittest.TestCase):
+    def test_html_pages_are_not_cacheable(self):
+        w = Wsgi.__new__(Wsgi) if False else None
+        import passenger_wsgi as W
+        got = {}
+        def sr(status, headers): got['h'] = dict(headers)
+        b''.join(W.application({'REQUEST_METHOD': 'GET', 'PATH_INFO': '/dashboard.html', 'QUERY_STRING': '', 'wsgi.input': io.BytesIO(b''), 'CONTENT_LENGTH': '0', 'SERVER_NAME': 'x', 'SERVER_PORT': '80', 'REMOTE_ADDR': '127.0.0.1', 'wsgi.url_scheme': 'http'}, sr))
+        self.assertIn('no-store', got['h']['Cache-Control'])
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)

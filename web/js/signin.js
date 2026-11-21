@@ -4,4 +4,5 @@ $('#fli').addEventListener('submit',async e=>{e.preventDefault();const m=$('#msg
  catch(err){show(m,'err',err.message);b.disabled=false}});
 
 googleError($('#msg'));
+if(new URLSearchParams(location.search).get('out'))show($('#msg'),'ok','You have been signed out.');
 if(new URLSearchParams(location.search).get('idle'))show($('#msg'),'ok','You were signed out after a few minutes of inactivity. Please sign in again.');

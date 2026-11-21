@@ -44,6 +44,7 @@ class Settings:
         self.port = int(env('PORT', '8080'))
         self.admin_token = env('ADMIN_TOKEN', '')
         self.dev_mode = flag('DEV_MODE', False)  # DEV_MODE=1 returns OTPs in the API response (never in production)
+        self.dummy_data_email = env('DUMMY_DATA_EMAIL', '').strip().lower() if flag('DEV_MODE', False) else ''  # local demo only: Search shows random sample rows for this account
         self.skip_email_verify = flag('SKIP_EMAIL_VERIFY', False) and self.dev_mode  # local demo only: new accounts are treated as email-verified
         self.trust_proxy = flag('TRUST_PROXY', False)
         self.worker_interval = int(env('WORKER_INTERVAL', '120'))  # seconds; 0 disables the in-process worker

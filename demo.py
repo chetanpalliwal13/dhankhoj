@@ -20,7 +20,7 @@ os.chdir(HERE)
 sys.path.insert(0, HERE)
 os.environ.update({'DB_PATH': os.path.join(HERE, 'data', 'demo.db'), 'DEV_MODE': '1', 'SKIP_EMAIL_VERIFY': '1', 'PAY_PROVIDER': 'mock',
                    'EMAIL_PROVIDER': 'console', 'SMS_PROVIDER': 'console', 'WHATSAPP_PROVIDER': 'console', 'BASE_URL': os.environ.get('BASE_URL', 'http://localhost:8080'),
-                   'APP_SALT': 'demo-salt', 'ADMIN_TOKEN': os.environ.get('ADMIN_TOKEN', 'demo-admin')})
+                   'APP_SALT': 'demo-salt', 'DUMMY_DATA_EMAIL': os.environ.get('DUMMY_DATA_EMAIL', 'chetanpalliwal13@gmail.com'), 'ADMIN_TOKEN': os.environ.get('ADMIN_TOKEN', 'demo-admin')})
 import ingest  # noqa: E402
 import server  # noqa: E402
 from auth import Auth  # noqa: E402
@@ -35,6 +35,10 @@ def seed(st, db, svc):
             if co and os.path.splitext(p)[1] in ('.csv', '.txt'):
                 print('loaded', co, ingest.ingest_file(db, co, p, declared_on='2026-11-14').get('rows'), 'rows')
     au = Auth(svc)
+    if not au._by_email('chetanpalliwal13@gmail.com'):
+        au.signup({'first_name': 'Chetan', 'last_name': 'Palliwal', 'mobile': '98765 43211', 'email': 'chetanpalliwal13@gmail.com', 'password': 'Blue-Harbor-5821', 'consent': True})
+        au.update_profile(au._by_email('chetanpalliwal13@gmail.com'), {'pan': 'ABCPP1234F', 'pincode': '400001'})
+        print('sample-data account ready: chetanpalliwal13@gmail.com / Blue-Harbor-5821')
     if not au._by_email('demo@dhankhoj.test'):
         au.signup({'first_name': 'Sarita', 'last_name': 'Naidu', 'mobile': '98765 43210', 'email': 'demo@dhankhoj.test', 'password': 'Sunrise-Pass-482', 'consent': True})
         u = au._by_email('demo@dhankhoj.test')

@@ -29,7 +29,7 @@ async function buildNav(){const n=document.getElementById('nav');if(!n)return;co
   m.addEventListener('click',e=>{if(e.target.closest('a'))close()});
   document.addEventListener('click',e=>{if(!e.target.closest('.um'))close()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();b.focus()}});
-  document.getElementById('signout').addEventListener('click',async e=>{e.preventDefault();try{await api('/api/auth/logout',{})}catch(_){}location.href='/'})}
+  document.getElementById('signout').addEventListener('click',async e=>{e.preventDefault();try{await api('/api/auth/logout',{})}catch(_){}location.replace('/')})}
 buildNav();
 
 // ---- Sign in with Google: buttons stay hidden until the server says it is configured
@@ -50,6 +50,9 @@ if(!document.getElementById('lmod'))initGoogle();
   const bump=()=>{last=Date.now();if(warned){warned=false;if(toast){toast.remove();toast=null}}if(Date.now()-pinged>60000){pinged=Date.now();api('/api/session/ping',{}).catch(()=>{})}};
   ['mousemove','mousedown','keydown','scroll','touchstart','click'].forEach(ev=>document.addEventListener(ev,bump,{passive:true}));
   setInterval(async()=>{const left=idle-(Date.now()-last);
-    if(left<=0){try{await api('/api/auth/logout',{})}catch(_){}location.href='/signin.html?idle=1';return}
+    if(left<=0){try{await api('/api/auth/logout',{})}catch(_){}location.replace('/signin.html?idle=1');return}
     if(left<=30000&&!warned&&!window.PAYING){warned=true;toast=document.createElement('div');toast.className='idle-toast';toast.setAttribute('role','alert');toast.innerHTML='<span>You will be signed out soon because you have been inactive.</span>';const b=document.createElement('button');b.type='button';b.textContent='Stay signed in';b.addEventListener('click',bump);toast.appendChild(b);document.body.appendChild(toast)}
     if(window.PAYING){last=Date.now();if(Date.now()-pinged>60000){pinged=Date.now();api('/api/session/ping',{}).catch(()=>{})}}},5000)})();
+
+// Back / forward button after sign-out: a page restored from the browser's memory is re-checked, so signed-out visitors never see account pages
+window.addEventListener('pageshow',e=>{if(e.persisted)location.reload()});

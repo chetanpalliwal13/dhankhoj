@@ -255,11 +255,69 @@ class Service:
                 'holder': name if strong else M.mask_name_from_blob(name, 6), 'address': addr if strong else '', 'pincode': m['pincode'] or '',
                 'via': [M.VIA_LABEL.get(v, v) for v in (m['via'] or '').split(',') if v] if m['via'] else []}
 
+    DUMMY_COS = ['Sample Steel Works Ltd', 'Demo Power Finance Ltd', 'Example Textiles Ltd', 'Test Pharma Industries Ltd', 'Mock Foods Ltd']
+
+    def _dummy_search(self, u, modes):
+        """LOCAL DEMO ONLY (DEV_MODE + DUMMY_DATA_EMAIL): replace this user's matches with 6-10 freshly generated sample rows, different on every search."""
+        import random
+        rnd, c, uid = random.Random(), self.db.conn, u['id']
+        tag = 'dummy:%d:' % uid
+        old = [r[0] for r in c.execute('SELECT id FROM lists WHERE file_hash LIKE ?', (tag + '%',)).fetchall()]
+        for lid in old:
+            c.execute('DELETE FROM rec_tok WHERE rec_id IN (SELECT id FROM records WHERE list_id=?)', (lid,))
+            c.execute('DELETE FROM records WHERE list_id=?', (lid,))
+            c.execute('DELETE FROM lists WHERE id=?', (lid,))
+        c.execute('DELETE FROM matches WHERE sub_id=?', (uid,))
+        first, last = (u['first_name'] or u['name'].split()[0]).upper(), (u['last_name'] or u['name'].split()[-1]).upper()
+        pin = u['pincode'] or rnd.choice(['400001', '110001', '560001', '411001', '600001'])
+        streets = ['MG ROAD', 'STATION ROAD', 'GANDHI NAGAR', 'LAKE VIEW COLONY', 'SUNRISE APARTMENTS', 'MARKET YARD']
+        cities = ['MUMBAI', 'PUNE', 'DELHI', 'BENGALURU', 'CHENNAI', 'JAIPUR']
+        cos = rnd.sample(self.DUMMY_COS, rnd.randint(2, 5))
+        n = rnd.randint(6, 10)
+        lists = {}
+        for k, co in enumerate(cos):
+            cid = self.db.one('SELECT id FROM companies WHERE name=?', (co,))
+            cid = cid['id'] if cid else self.db.x('INSERT INTO companies(name) VALUES(?)', (co,)).lastrowid
+            yr = rnd.randint(2019, 2026)
+            declared = dt.date.today() - dt.timedelta(days=rnd.randint(200, 365 * 6 + 120))
+            due = ingest.due_from_declared(declared)
+            lid = c.execute('INSERT INTO lists(company_id,fy,dtype,source_url,declared_on,iepf_due,n_rows,total,ingested_at,file_hash,validation) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+                            (cid, '%d-%02d' % (yr, (yr + 1) % 100), rnd.choice(['Final', 'Interim']), '', declared.isoformat(), due.isoformat(), 0, 0, now_iso(), '%s%d:%d' % (tag, k, rnd.getrandbits(40)), 'unverified')).lastrowid
+            lists[co] = (lid, cid)
+        kinds = ['pan', 'dp_client_id', 'dp_client_id', 'name+pin', 'name+pin', 'name', 'address', 'name']
+        rows = 0
+        for i in range(n):
+            co = rnd.choice(cos)
+            lid, cid = lists[co]
+            via = rnd.choice(kinds)
+            strong = via in ('pan', 'dp_client_id')
+            folio = rnd.choice(['IN30', '1201', '1202', 'IN301']) + ''.join(str(rnd.randint(0, 9)) for _ in range(12))
+            nm = ('%s %s' % (first, last)) if strong or via == 'name+pin' else rnd.choice(['%s %s %s' % (first, rnd.choice('ABKMRS'), last), '%s. %s' % (first[0], last), '%s %s' % (last, first)])
+            addr = '%d %s %s' % (rnd.randint(1, 250), rnd.choice(streets), rnd.choice(cities))
+            hold = rnd.choice([10, 25, 40, 55, 80, 120, 160, 250, 400, 1000])
+            amt = round(hold * rnd.choice([1.5, 2.5, 4.25, 6.8, 9.0, 12.5, 21.0]), 2)
+            conf = 'high' if strong else ('medium' if via == 'name+pin' else 'low')
+            rid = c.execute('INSERT INTO records(list_id,company_id,folio,folio_key,blob,pincode,holding,amount,rowhash,dp_key,name,addr) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
+                            (lid, cid, folio, M.folio_key(folio), nm + ' ' + addr, pin, hold, amt, '%s%d:%d' % (tag, lid, rnd.getrandbits(48)), None, nm, addr)).lastrowid
+            c.execute('INSERT INTO matches(sub_id,rec_id,conf,score,first_seen,via) VALUES(?,?,?,?,?,?)', (uid, rid, conf, 1.0 if strong else 0.8, now_iso(), via))
+            rows += 1
+        for co, (lid, cid) in lists.items():
+            c.execute('UPDATE lists SET n_rows=(SELECT COUNT(*) FROM records WHERE list_id=?), total=(SELECT COALESCE(SUM(amount),0) FROM records WHERE list_id=?) WHERE id=?', (lid, lid, lid))
+        c.commit()
+        self.allocate(uid)
+        out = self.me(u)
+        out['searched'] = sorted(modes)
+        out['found'] = rows
+        out['sample'] = True
+        return out
+
     def search(self, u, modes, wipe=True):
         """Dashboard search with the keys the user ticked. Results are stored as matches (so the claim flow can refer to them) and returned like me()."""
         modes = {x for x in (modes or []) if x in ('pan', 'ids', 'name', 'address')}
         if not modes:
             raise ApiError('Tick at least one thing to search with.')
+        if self.st.dummy_data_email and (u['email'] or '').lower() == self.st.dummy_data_email:
+            return self._dummy_search(u, modes)
         pan = self.vault.open(u['pan_enc']) if u['pan_enc'] else ''
         folios = json.loads(u['folios'] or '[]')
         if 'pan' in modes and not pan:
@@ -288,6 +346,9 @@ class Service:
 
     def me(self, u):
         """Dashboard data. Entries for companies outside the user's free slots / paid plan are returned only as a count and an amount band."""
+        dummy = bool(self.st.dummy_data_email and (u['email'] or '').lower() == self.st.dummy_data_email)
+        if dummy and not self.db.one("SELECT 1 FROM lists WHERE file_hash LIKE ?", ('dummy:%d:%%' % u['id'],)):
+            return self._dummy_search(u, [])
         self.allocate(u['id'])
         rows = self._match_rows(u['id'])
         shown, locked = self._split(u, rows)
@@ -300,7 +361,7 @@ class Service:
         vis = self.visible_companies(u)
         used = len({m['cid'] for m in shown}) if vis is None else len(vis)
         needs_pan = bool(u['password_hash']) and not u['pan_hash']
-        return {'profile': {'name': u['name'], 'first_name': u['first_name'] or u['name'].split()[0], 'email': mask_email(u['email']), 'phone': mask_phone(u['phone']), 'since': u['verified_at'],
+        return {'sample': dummy, 'profile': {'name': u['name'], 'first_name': u['first_name'] or u['name'].split()[0], 'email': mask_email(u['email']), 'phone': mask_phone(u['phone']), 'since': u['verified_at'],
                             'pan_masked': ('XXXXXX' + u['pan_last4']) if u['pan_last4'] else None, 'ids': [M.mask_folio(f) for f in json.loads(u['folios'] or '[]')], 'has_address': bool((u['address'] or u['city']) and u['pincode'])},
                 'plan': {**plan, 'used': used}, 'needs_pan': needs_pan, 'dp_count': len(json.loads(u['folios'] or '[]')),
                 'likely': likely, 'possible': [i for i in items if i['confidence'] == 'low'], 'total_likely': round(sum(i['amount'] or 0 for i in likely), 2),

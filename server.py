@@ -517,7 +517,7 @@ def make_handler(svc, st, rl):
             if ext in ('.html', '.js', '.css', '.svg'):
                 ctype += '; charset=utf-8'
             csp = CSP_RAZORPAY if (os.path.basename(full) == 'upgrade.html' and bl.provider() == 'razorpay') else CSP
-            self._headers(200, ctype, len(data), {'Cache-Control': 'no-cache' if ext in ('.html', '.js', '.css') else 'public, max-age=3600'}, csp=csp)
+            self._headers(200, ctype, len(data), {'Cache-Control': 'no-store' if ext == '.html' else 'no-cache' if ext in ('.js', '.css') else 'public, max-age=3600'}, csp=csp)
             if self.command != 'HEAD':
                 self.wfile.write(data)
 
