@@ -4,8 +4,11 @@ const inr=n=>{n=Number(n||0);return '₹'+n.toLocaleString('en-IN',n>=10000?{max
 async function api(path,body){
   const o=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)};
   if(window.demoApi)return window.demoApi(path,body);
+  if(new URLSearchParams(location.search).get('preview')==='1')try{localStorage.setItem('dk_preview_on','1')}catch(e){}
   let r;try{r=await fetch(path,o)}catch(e){throw new Error('Network problem. Please try again.')}
-  if(!(r.headers.get('content-type')||'').includes('json')){  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
+  if(!(r.headers.get('content-type')||'').includes('json')){
+    let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
+    if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info'))throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
     if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795263800';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
