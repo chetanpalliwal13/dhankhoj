@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/css/site.css"><title>My account - DhanKhoj</title></head><body><div class="wrap"><header class="top"><a class="logo" href="/"><img src="/favicon.svg" width="30" height="30" alt="">DhanKhoj</a><nav id="nav"><a href="/claim.html">How to claim</a><a href="/upgrade.html">Pricing</a></nav></header>
 
-<h1>My account</h1>
+<div class="pagehead"><h1>My account</h1><a class="xbtn" href="/dashboard.html" aria-label="Close and return to dashboard" title="Close">&times;</a></div>
 <div id="msg" class="msg hide"></div>
 <div id="main" class="hide">
 <div class="card" id="identity" style="border:2px solid var(--gold)"><h2>PAN &amp; demat / folio IDs <span class="pill paid">needed for your search</span></h2>
@@ -13,7 +13,7 @@
   <button type="button" id="adddp" class="ghost" style="margin-top:6px">+ Add another ID</button>
   <div class="hint" id="dphint"></div>
   <label for="al">Other spellings of your name <small>comma separated - maiden name, old spelling</small></label><input id="al" type="text" maxlength="160">
-  <button id="bi">Save PAN &amp; IDs</button><div id="imsg" class="msg hide"></div></form></div>
+  <button id="bi">Save PAN &amp; IDs</button> <a class="btn ghost" href="/dashboard.html" style="margin-top:6px">Close</a><div id="imsg" class="msg hide"></div></form></div>
 
 <div class="card" id="profile" style="margin-top:18px"><h2>Profile</h2>
  <form id="fp" novalidate>
@@ -24,7 +24,7 @@
   <div class="row"><div><label for="fa">Father's / spouse's name</label><input id="fa" type="text" maxlength="80"></div><div><label for="lg">Preferred language</label><select id="lg"><option value="">-</option></select></div></div>
   <label for="ad">Address</label><input id="ad" type="text" maxlength="250">
   <div class="row3"><div><label for="ci">City</label><input id="ci" type="text" maxlength="60"></div><div><label for="st">State</label><select id="st"><option value="">-</option></select></div><div><label for="pin">PIN code</label><input id="pin" type="text" inputmode="numeric" maxlength="6"></div></div>
-  <button id="bp">Save profile</button><div id="pmsg" class="msg hide"></div></form></div>
+  <button id="bp">Save profile</button> <a class="btn ghost" href="/dashboard.html" style="margin-top:6px">Close</a><div id="pmsg" class="msg hide"></div></form></div>
 
 <div class="card" id="alerts" style="margin-top:18px"><h2>Alerts - subscribe / unsubscribe</h2>
  <p class="mut" style="margin-top:0">Switch each channel on or off. Every email, SMS and WhatsApp message also carries a one-click unsubscribe link.</p>
@@ -49,5 +49,6 @@
  <h3>Delete my account</h3><p class="mut">Deletes your profile, PAN, matches, alerts and sign-ins immediately. This cannot be undone. Payment records are kept only as long as tax law requires, without your personal details.</p>
  <label for="dp">Your password</label><input id="dp" type="password" autocomplete="current-password" style="max-width:320px">
  <button id="bdel" class="danger">Delete my account and data</button><div id="dmsg" class="msg hide"></div></div>
+<div class="closerow"><a class="btn ghost" href="/dashboard.html">Close and go to dashboard</a></div>
 </div>
 <footer><div class="wrap">DhanKhoj is an independent information service, not affiliated with SEBI, the IEPF Authority, any exchange or company. <a href="/terms.html">Terms &amp; refunds</a> - <a href="/privacy.html">Privacy</a> - <a href="/claim.html">How to claim</a></div></footer></div><script src="/js/common.js"></script><script src="/js/account.js"></script></body></html>

@@ -4,3 +4,7 @@
 data/
 __pycache__/
 *.pyc
+
+# real company lists contain personal data: never commit them
+sample_data/*.pdf
+*.pdf

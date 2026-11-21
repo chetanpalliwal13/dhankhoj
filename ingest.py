@@ -166,7 +166,15 @@ def parse_line(line):
     folio, blob = parts
     if not FOLIO_RE.match(folio) or not re.search(r'\d', folio) or not re.search(r'[A-Za-z]{2}', blob):
         return None
-    return {'dtype': dtype, 'fy': fy, 'folio': folio, 'blob': blob.strip(), 'pincode': pin or '', 'holding': hold, 'amount': amt}
+    name = addr = None
+    k = line.find(folio)
+    if k >= 0:  # pdftotext -layout keeps the column gaps: first wide column = name, the rest = address
+        segs = [x for x in re.split(r'\s{2,}', line[k + len(folio):].strip()) if x]
+        while segs and re.fullmatch(r'[\d.,]+', segs[-1]):
+            segs.pop()
+        if len(segs) >= 2:
+            name, addr = segs[0].strip(), ' '.join(segs[1:]).strip()
+    return {'dtype': dtype, 'fy': fy, 'folio': folio, 'blob': blob.strip(), 'pincode': pin or '', 'holding': hold, 'amount': amt, 'name': name, 'addr': addr}
 
 
 def parse_text(text):
@@ -245,7 +253,7 @@ def parse_rows(rows):
         h = _money(cell(r, cols['hold']))
         t = cell(r, cols['type'])
         out.append({'dtype': norm_dtype(t) if t else None, 'fy': norm_fy(t) or norm_fy(cell(r, cols['fy'])), 'folio': folio, 'blob': re.sub(r'\s+', ' ', (name + ' ' + addr).strip()),
-                    'pincode': pin, 'holding': int(h) if h is not None else None, 'amount': amt, 'father': father})
+                    'pincode': pin, 'holding': int(h) if h is not None else None, 'amount': amt, 'father': father, 'name': name or None, 'addr': addr or None})
     return out, skipped
 
 
@@ -351,8 +359,8 @@ def ingest_file(db, company, path, fy=None, dtype=None, source_url='', declared_
     for r in rows:
         rh = hashlib.sha1(('%s|%s|%s|%s|%s' % (lid, r['folio'], r['blob'], r['amount'], r['holding'])).encode()).hexdigest()
         dpk = registry.dp_key(r['folio']) or next(iter(sorted(registry.find_dp_keys(r['folio'] + ' ' + r['blob']))), '')
-        cur = c.execute('INSERT OR IGNORE INTO records(list_id,company_id,folio,folio_key,blob,pincode,holding,amount,rowhash,dp_key,father) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
-                        (lid, cid, r['folio'], folio_key(r['folio']), r['blob'], r['pincode'], r['holding'], r['amount'], rh, dpk or None, (r.get('father') or None)))
+        cur = c.execute('INSERT OR IGNORE INTO records(list_id,company_id,folio,folio_key,blob,pincode,holding,amount,rowhash,dp_key,father,name,addr) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                        (lid, cid, r['folio'], folio_key(r['folio']), r['blob'], r['pincode'], r['holding'], r['amount'], rh, dpk or None, (r.get('father') or None), r.get('name'), r.get('addr')))
         if cur.rowcount:
             n += 1
             total += r['amount']

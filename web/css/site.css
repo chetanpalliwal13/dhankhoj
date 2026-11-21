@@ -215,13 +215,46 @@ nav .umenu a:hover,nav .umenu a:focus-visible{background:var(--soft);color:var(-
 @media(max-width:820px){.umenu{right:-6px;min-width:230px}}
 
 /* one theme everywhere: every page opens with the same night-blue header band as the home page */
-.wrap>header.top{background:var(--night);box-shadow:0 0 0 100vmax var(--night);clip-path:inset(0 -100vmax);margin-bottom:30px;padding:16px 0}
+.wrap>header.top{position:relative;z-index:30;background:none;margin-bottom:30px;padding:16px 0}
+.wrap>header.top::before{content:'';position:absolute;z-index:-1;top:0;bottom:0;left:50%;width:100vw;transform:translateX(-50%);background:var(--night)}
 .wrap>header.top .logo{color:#fff}
 .wrap>header.top nav a{color:#C3CBF0}.wrap>header.top nav a:hover{color:#fff}
 .wrap>header.top nav a.keep:last-child{background:var(--gold);color:var(--night)}
-.hero-wrap .wrap>header.top{background:none;box-shadow:none;clip-path:none;margin-bottom:0}
+.hero-wrap .wrap>header.top{margin-bottom:0}.hero-wrap .wrap>header.top::before{display:none}
 .wrap>header.top .uav{border-color:var(--night2);box-shadow:0 0 0 2px var(--gold)}
 .wrap>header.top .uav:hover{box-shadow:0 0 0 4px rgba(255,178,36,.45)}
 h1{margin-top:6px}
 .idle-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:90;background:var(--night);color:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 18px 50px -12px rgba(12,19,48,.5);display:flex;gap:14px;align-items:center;max-width:92vw}
 .idle-toast button{margin:0;background:var(--gold);color:var(--night);padding:8px 14px}
+
+/* page close button (account / profile) */
+.pagehead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.xbtn{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:24px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin:0;padding:0;box-shadow:none}
+.xbtn:hover{background:var(--soft);color:var(--g2)}.xbtn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.closerow{display:flex;justify-content:flex-end;margin-top:18px}
+a.btn.ghost,.btn.ghost{background:#fff;color:var(--g);border:1px solid var(--g)}
+
+/* dashboard */
+.prof{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}.prof-l{display:flex;gap:14px;align-items:center}.prof-r{text-align:right}
+.pname{font:400 22px var(--hf);color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.chip{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--soft);color:var(--g2);font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap}
+.chip.warnc{background:#FFF1D6;color:#8A5A0C}
+.dstats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+.dstats>div{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.dstats b{font:400 26px var(--hf);color:var(--ink);line-height:1.2}.dstats b.big{color:var(--g2)}.dstats small{font-size:12.5px}
+.srch{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:14px;padding:12px;cursor:pointer;background:#fff;margin:0}
+.opt input{width:auto;margin:3px 0 0}.opt:has(input:checked){border-color:var(--g);background:var(--soft)}.opt:has(input:disabled){opacity:.7;cursor:default}
+.opt span{display:flex;flex-direction:column}.opt small{color:var(--mut);font-size:12.5px;font-weight:400;word-break:break-word}
+.tools{display:flex;gap:10px;align-items:center}.tools select{width:auto;margin:0;padding:8px 10px}
+table.mt{min-width:1080px;font-size:13.5px}table.mt th{white-space:nowrap}table.mt td.addr{max-width:260px}table.mt .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+table.mt tfoot td{border-bottom:0;font-size:15px;padding-top:14px}
+@media(max-width:820px){.dstats{grid-template-columns:1fr 1fr}.srch{grid-template-columns:1fr 1fr}.prof-r{text-align:left}}
+@media(max-width:520px){.srch{grid-template-columns:1fr}}
+
+.wrap>header.top nav .umenu a,.wrap>header.top nav .umenu a.keep{color:var(--ink)}
+.wrap>header.top nav .umenu a:hover,.wrap>header.top nav .umenu a:focus-visible{color:var(--g2);background:var(--soft)}
+.wrap>header.top nav .umenu #signout{color:var(--red)}
+table.mt{min-width:980px}
+
+.hide{display:none!important}

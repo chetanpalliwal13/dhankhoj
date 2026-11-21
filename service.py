@@ -85,6 +85,9 @@ def mask_phone(p):
     return p[:3] + '*****' + p[-2:]
 
 
+_PANRE = re.compile(r'\b[A-Z]{5}[0-9]{4}[A-Z]\b')
+
+
 def days_left(iso):
     if not iso:
         return None
@@ -141,7 +144,9 @@ class Service:
         if r['password_hash'] and not pan:  # accounts must register a PAN (in the profile) before anything is searched; old anonymous rows are exempt
             self.db.x('DELETE FROM matches WHERE sub_id=?', (sid,))
             return 0
-        found = M.find_matches(self.db, name, aliases, pin, folios, limit=500, pan=pan or '', father=(r['father_name'] or ''))
+        found4 = M.find_matches(self.db, name, aliases, pin, folios, limit=500, pan=pan or '', father=(r['father_name'] or ''), with_reason=True)
+        found = [x[:3] for x in found4]
+        why = {x[0]['id']: x[3] for x in found4}
         c = self.db.conn
         keep = [rec['id'] for rec, _, _ in found]
         if keep:  # matches that no longer fit the (possibly edited) profile go away
@@ -149,8 +154,8 @@ class Service:
         else:
             c.execute('DELETE FROM matches WHERE sub_id=?', (sid,))
         for rec, conf, sc in found:
-            c.execute('INSERT INTO matches(sub_id,rec_id,conf,score,first_seen) VALUES(?,?,?,?,?) ON CONFLICT(sub_id,rec_id) DO UPDATE SET conf=excluded.conf, score=excluded.score',
-                      (sid, rec['id'], conf, sc, now_iso()))
+            c.execute('INSERT INTO matches(sub_id,rec_id,conf,score,first_seen,via) VALUES(?,?,?,?,?,?) ON CONFLICT(sub_id,rec_id) DO UPDATE SET conf=excluded.conf, score=excluded.score, via=excluded.via',
+                      (sid, rec['id'], conf, sc, now_iso(), why.get(rec['id'], '')))
         c.commit()
         self.allocate(sid)
         return len(found)
@@ -163,7 +168,7 @@ class Service:
         return n
 
     def _match_rows(self, sid, where='1=1', args=()):
-        return self.db.q('SELECT m.id mid, m.conf, m.score, m.notified, r.folio, r.amount, r.holding, c.name company, c.id cid, l.fy, l.dtype, l.iepf_due, l.source_url, l.declared_on, r.id rid '
+        return self.db.q('SELECT m.id mid, m.conf, m.score, m.notified, m.via, r.folio, r.amount, r.holding, r.name rname, r.addr raddr, r.blob, r.pincode, c.name company, c.id cid, l.fy, l.dtype, l.iepf_due, l.source_url, l.declared_on, r.id rid '
                          'FROM matches m JOIN records r ON r.id=m.rec_id JOIN companies c ON c.id=r.company_id JOIN lists l ON l.id=r.list_id '
                          'WHERE m.sub_id=? AND ' + where + ' ORDER BY r.amount DESC', (sid,) + tuple(args))
 
@@ -237,6 +242,50 @@ class Service:
         likely = [r for r in rows if r['conf'] in ('high', 'medium')]
         return {'likely': len(likely), 'possible': len(rows) - len(likely), 'amount': round(sum(r['amount'] or 0 for r in likely), 2)}
 
+    def _item(self, m):
+        """One dashboard row. Only strong (high-confidence) matches show the holder's name and address; weaker ones are masked because they may be someone else."""
+        strong = m['conf'] == 'high'
+        blob_toks = (m['blob'] or '').split()
+        name = m['rname'] or ' '.join(blob_toks[:3])
+        addr = m['raddr'] or ' '.join(blob_toks[3:])
+        name = _PANRE.sub(lambda x: 'XXXXXX' + x.group(0)[-4:], name)  # a PAN printed inside a list row is never echoed back in full
+        addr = _PANRE.sub(lambda x: 'XXXXXX' + x.group(0)[-4:], addr)
+        return {'id': m['mid'], 'company': m['company'], 'fy': m['fy'], 'dtype': m['dtype'], 'folio': M.mask_folio(m['folio']), 'holding': m['holding'], 'amount': m['amount'], 'confidence': m['conf'],
+                'deadline_est': m['iepf_due'], 'days_left': days_left(m['iepf_due']), 'source_url': m['source_url'], 'declared_on': m['declared_on'],
+                'holder': name if strong else M.mask_name_from_blob(name, 6), 'address': addr if strong else '', 'pincode': m['pincode'] or '',
+                'via': [M.VIA_LABEL.get(v, v) for v in (m['via'] or '').split(',') if v] if m['via'] else []}
+
+    def search(self, u, modes, wipe=True):
+        """Dashboard search with the keys the user ticked. Results are stored as matches (so the claim flow can refer to them) and returned like me()."""
+        modes = {x for x in (modes or []) if x in ('pan', 'ids', 'name', 'address')}
+        if not modes:
+            raise ApiError('Tick at least one thing to search with.')
+        pan = self.vault.open(u['pan_enc']) if u['pan_enc'] else ''
+        folios = json.loads(u['folios'] or '[]')
+        if 'pan' in modes and not pan:
+            raise ApiError('Add your PAN in your profile first, or untick PAN.')
+        if 'ids' in modes and not folios:
+            raise ApiError('Add your DP-Client ID or folio number in your profile first, or untick it.')
+        if 'address' in modes and not ((u['address'] or u['city']) and u['pincode']):
+            raise ApiError('Address search needs your address and PIN code in your profile. Add them or untick Address.')
+        name, aliases, pin, _ = self._sub_inputs(u)
+        found = M.search_matches(self.db, modes, name, aliases, pin, folios, pan, u['father_name'] or '', u['address'] or '', u['city'] or '', limit=500)
+        c = self.db.conn
+        keep = [r['id'] for r, _, _, _ in found]
+        if wipe:
+            if keep:
+                c.execute('DELETE FROM matches WHERE sub_id=? AND rec_id NOT IN (%s)' % ','.join('?' * len(keep)), [u['id']] + keep)
+            else:
+                c.execute('DELETE FROM matches WHERE sub_id=?', (u['id'],))
+        for rec, conf, sc, via in found:
+            c.execute('INSERT INTO matches(sub_id,rec_id,conf,score,first_seen,via) VALUES(?,?,?,?,?,?) ON CONFLICT(sub_id,rec_id) DO UPDATE SET conf=excluded.conf, score=excluded.score, via=excluded.via',
+                      (u['id'], rec['id'], conf, sc, now_iso(), ','.join(via)))
+        c.commit()
+        out = self.me(u)
+        out['searched'] = sorted(modes)
+        out['found'] = len(found)
+        return out
+
     def me(self, u):
         """Dashboard data. Entries for companies outside the user's free slots / paid plan are returned only as a count and an amount band."""
         self.allocate(u['id'])
@@ -244,15 +293,15 @@ class Service:
         shown, locked = self._split(u, rows)
         items = []
         for m in shown:
-            items.append({'id': m['mid'], 'company': m['company'], 'fy': m['fy'], 'dtype': m['dtype'], 'folio': M.mask_folio(m['folio']), 'holding': m['holding'], 'amount': m['amount'], 'confidence': m['conf'],
-                          'deadline_est': m['iepf_due'], 'days_left': days_left(m['iepf_due']), 'source_url': m['source_url']})
+            items.append(self._item(m))
         likely = [i for i in items if i['confidence'] in ('high', 'medium')]
         lk = [m for m in locked if m['conf'] in ('high', 'medium')]
         plan = self.plan_state(u)
         vis = self.visible_companies(u)
         used = len({m['cid'] for m in shown}) if vis is None else len(vis)
         needs_pan = bool(u['password_hash']) and not u['pan_hash']
-        return {'profile': {'name': u['name'], 'first_name': u['first_name'] or u['name'].split()[0], 'email': mask_email(u['email']), 'phone': mask_phone(u['phone']), 'since': u['verified_at']},
+        return {'profile': {'name': u['name'], 'first_name': u['first_name'] or u['name'].split()[0], 'email': mask_email(u['email']), 'phone': mask_phone(u['phone']), 'since': u['verified_at'],
+                            'pan_masked': ('XXXXXX' + u['pan_last4']) if u['pan_last4'] else None, 'ids': [M.mask_folio(f) for f in json.loads(u['folios'] or '[]')], 'has_address': bool((u['address'] or u['city']) and u['pincode'])},
                 'plan': {**plan, 'used': used}, 'needs_pan': needs_pan, 'dp_count': len(json.loads(u['folios'] or '[]')),
                 'likely': likely, 'possible': [i for i in items if i['confidence'] == 'low'], 'total_likely': round(sum(i['amount'] or 0 for i in likely), 2),
                 'locked': {'companies': len({m['cid'] for m in locked}), 'entries': len(locked), 'likely_entries': len(lk),

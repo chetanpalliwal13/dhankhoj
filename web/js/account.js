@@ -42,7 +42,7 @@ $('#fi').addEventListener('submit',async e=>{e.preventDefault();const x=$('#imsg
  if(!P.pan_set){const v=$('#pan').value;if(!v)return show(x,'err','Enter your PAN - the search cannot start without it.');if(!PANRE.test(v))return show(x,'err',$('#panhint').textContent||'Check your PAN.');body.pan=v}
  const what=[body.pan?'PAN '+body.pan:'',ids.length?ids.length+' DP-Client ID / folio number(s)':''].filter(Boolean).join(' and ');
  if(what&&!confirm('Save '+what+'? They cannot be changed afterwards.'))return;
- try{fill(await api('/api/account/profile',body));show(x,'ok',what?'Saved and locked. We are searching the lists with your PAN and IDs - see your dashboard.':'Saved.')}catch(err){show(x,'err',err.message)}});
+ try{fill(await api('/api/account/profile',body));show(x,'ok',what?'Saved and locked. Use Close to go back to your dashboard and search.':'Saved.')}catch(err){show(x,'err',err.message)}});
 $('#fp').addEventListener('submit',async e=>{e.preventDefault();const x=$('#pmsg');x.classList.add('hide');
  try{fill(await api('/api/account/profile',{first_name:$('#fn').value,middle_name:$('#mn').value,last_name:$('#ln').value,mobile:$('#mo').value,alt_mobile:$('#am').value,dob:$('#dob').value,father_name:$('#fa').value,address:$('#ad').value,
   city:$('#ci').value,state:$('#st').value,pincode:$('#pin').value,lang:$('#lg').value}));show(x,'ok','Saved. We re-checked the lists with your updated details.')}catch(err){show(x,'err',err.message)}});
@@ -55,3 +55,4 @@ $('#fpw').addEventListener('submit',async e=>{e.preventDefault();const x=$('#wms
  try{await api('/api/account/password',{current:$('#cur').value,new:$('#np').value});show(x,'ok','Password changed. Other devices were signed out.');$('#fpw').reset()}catch(err){show(x,'err',err.message)}});
 $('#bdel').addEventListener('click',async()=>{const x=$('#dmsg');if(!confirm('Delete your account and all stored data? This cannot be undone.'))return;
  try{await api('/api/account/delete',{password:$('#dp').value});location.href='/?deleted=1'}catch(err){show(x,'err',err.message)}});
+

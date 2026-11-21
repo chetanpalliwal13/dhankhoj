@@ -88,3 +88,9 @@ Limits: the crawler needs outbound internet (it is tested here against a local m
 
 Loads the sample lists into `data/demo.db`, skips email verification and creates `demo@dhankhoj.test` / `Sunrise-Pass-482` with matches ready.
 Any new account whose name and PIN appear in `sample_data/` (for example Rajesh Ansari, 700001) also sees matches. Online payment uses the mock gateway. Never run this mode on a public server.
+
+## Dashboard search
+
+After signing in, the dashboard shows the profile (name, masked PAN, saved IDs), totals, and a search box with four keys: PAN, DP-Client ID / folio, Name, Address.
+Results are listed like the company's own PDF (company, year and type, folio, holder, address, shares, dividend) with the time left before the 7-year IEPF transfer, a CSV download and a total.
+Holder names and addresses are shown only for strong (PAN / ID) matches. To load a real list: `python3 ingest.py add list.pdf --company "Company Ltd" --declared 2026-11-14` (the layout of the AU Small Finance Bank PDF parses fully).

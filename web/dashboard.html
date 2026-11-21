@@ -5,15 +5,27 @@
 <div id="verify" class="hide"><div class="banner"><span><b>Confirm your email to see your results.</b> We sent a link to your inbox.</span><button id="bresend" class="ghost">Send the link again</button></div><div id="vmsg" class="msg hide"></div><div id="vdev" class="msg hide"></div></div>
 <div id="main" class="hide">
  <div id="phonebar" class="banner hide"><span>Want SMS or WhatsApp alerts too? Verify your mobile number first.</span><a class="btn" style="margin:0" href="/account.html#alerts">Verify mobile</a></div>
- <div class="card"><div class="mut">Likely unclaimed in the companies you can see</div><div class="big" id="tot"></div><div class="mut" id="who"></div>
-  <div id="planbox" style="margin-top:12px"></div></div>
+ <div class="card prof" id="profcard"><div class="prof-l"><span class="uav big" id="pav" aria-hidden="true"></span><div><div class="pname" id="pname"></div><div class="mut" id="who"></div>
+   <div class="chips" id="chips"></div></div></div><div class="prof-r"><div id="planbox"></div><a class="btn ghost" href="/account.html" style="margin:8px 0 0">Edit profile</a></div></div>
+ <div class="dstats" id="dstats"><div><span class="mut">You can likely claim</span><b class="big" id="tot">-</b><small id="totsub" class="mut"></small></div><div><span class="mut">Entries found</span><b id="s_n">-</b><small class="mut" id="s_c"></small></div><div><span class="mut">Soonest deadline</span><b id="s_d">-</b><small class="mut" id="s_dd"></small></div><div><span class="mut">Strong matches</span><b id="s_h">-</b><small class="mut">PAN / ID confirmed</small></div></div>
  <div id="needpan" class="card hide" style="margin-top:14px;border:2px solid var(--gold);background:#fff9ec"><h2 style="margin-top:0">One step left: add your PAN to start the search</h2>
   <p>We search the unclaimed-dividend lists with your <b>PAN</b> as the unique key, together with your name and any demat (DP-Client ID) or folio numbers you add. You can save up to 5 IDs.</p>
   <a class="btn" style="margin:0" href="/account.html#identity">Add PAN &amp; demat IDs</a></div>
  <div id="results">
- <div id="tip" class="banner hide"><span>Tip: add your <b>demat (DP-Client) IDs or folio numbers</b> - a match on them is the strongest proof a dividend is yours.</span><a class="btn" style="margin:0" href="/account.html#identity">Add IDs</a></div>
+ <div class="card" id="searchcard"><h2 style="margin-top:0">Search the unclaimed-dividend lists</h2>
+  <p class="mut" style="margin-top:0">Choose what to search with, then press Search. Strong keys (PAN, DP-Client ID or folio) give confirmed matches; name and address can also find entries that are listed without them.</p>
+  <div class="srch" id="srch">
+   <label class="opt"><input type="checkbox" id="m_pan" value="pan"><span><b>PAN</b><small id="h_pan"></small></span></label>
+   <label class="opt"><input type="checkbox" id="m_ids" value="ids"><span><b>DP-Client ID / folio</b><small id="h_ids"></small></span></label>
+   <label class="opt"><input type="checkbox" id="m_name" value="name"><span><b>Name</b><small id="h_name"></small></span></label>
+   <label class="opt"><input type="checkbox" id="m_address" value="address"><span><b>Address</b><small id="h_address"></small></span></label>
+  </div>
+  <button id="bsearch" style="margin-top:14px">Search</button> <span class="mut" id="searchinfo"></span><div id="smsg" class="msg hide"></div></div>
+ <div id="tip" class="banner hide" style="margin-top:14px"><span>Tip: add your <b>demat (DP-Client) IDs or folio numbers</b> - a match on them is the strongest proof a dividend is yours.</span><a class="btn" style="margin:0" href="/account.html#identity">Add IDs</a></div>
  <div id="locked" class="lock hide" style="margin-top:14px"></div>
- <h2 style="margin-top:26px">Likely matches</h2><div class="card" style="overflow:auto"><table><thead><tr><th></th><th>Company</th><th>Type / FY</th><th>Folio</th><th class="num">Shares</th><th class="num">Amount</th><th>Deadline (est.)</th></tr></thead><tbody id="rows"></tbody></table></div>
+ <div class="pagehead" style="margin-top:26px"><h2 style="margin:0">Your matches</h2><div class="tools"><label class="mut" for="sort">Sort</label><select id="sort"><option value="amt">Highest amount</option><option value="due">Least time left</option><option value="co">Company</option></select><button type="button" id="bcsv" class="ghost" style="margin:0">Download CSV</button></div></div>
+ <div class="card" style="overflow:auto;margin-top:10px"><table class="mt"><thead><tr><th></th><th>Company</th><th>Year / type</th><th>Folio / DP-Client ID</th><th>Holder</th><th>Address</th><th class="num">Shares</th><th class="num">Dividend</th><th>Matched by</th><th>Time left to claim</th></tr></thead><tbody id="rows"></tbody><tfoot id="foot"></tfoot></table>
+  <p class="mut" style="margin:10px 0 0">Time left is an estimate: a dividend unclaimed for 7 years moves to the IEPF. Names and addresses are shown only for strong matches. <a href="/claim.html">How to claim</a></p></div>
  <div class="card" style="margin-top:14px"><h3>Want an expert to claim for you? <span class="pill paid">optional, paid</span></h3>
   <p class="mut">Tick the entries above, then send a request. A verified CS / CA from our panel sends you a written quote first; nothing starts or is charged until you accept. You can always claim yourself for free - <a href="/claim.html">see the steps</a>.</p>
   <label for="cnotes">Notes for the expert <small>optional - e.g. shareholder deceased, lost certificates, address changed</small></label><textarea id="cnotes" maxlength="500"></textarea>

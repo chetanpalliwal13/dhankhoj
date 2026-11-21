@@ -168,6 +168,63 @@ def find_matches(db, name, aliases=(), pincode='', folios=(), limit=200, pan='',
     return res if with_reason else [x[:3] for x in res]
 
 
+ADDR_STOP = {'FLAT', 'HOUSE', 'HNO', 'NO', 'ROAD', 'RD', 'STREET', 'ST', 'NEAR', 'OPP', 'BLOCK', 'FLOOR', 'SECTOR', 'PLOT', 'NAGAR', 'COLONY', 'THE', 'AND', 'INDIA', 'DIST', 'POST', 'VILLAGE'}
+VIA_LABEL = {'dp_client_id': 'DP-Client ID', 'folio': 'Folio', 'pan': 'PAN', 'name': 'Name', 'name+pin': 'Name + PIN', 'address': 'Address'}
+
+
+def addr_tokens(*parts):
+    t = norm_tokens(' '.join(p for p in parts if p), drop_titles=False)
+    return {x for x in t if len(x) >= 3 and x not in ADDR_STOP and not x.isdigit()} | {x for x in t if x.isdigit() and 1 <= len(x) <= 5}
+
+
+def search_matches(db, modes, name, aliases=(), pincode='', folios=(), pan='', father='', address='', city='', limit=500):
+    """Search with only the keys the user ticked. modes is a subset of {'pan','ids','name','address'}.
+    -> [(row, conf, score, via_list)] best first. Strong keys (PAN, DP-Client ID / folio) give 'high'; name uses the usual scoring; address needs the same PIN plus
+    at least two shared address words and is 'low' on its own ('medium' when the name agrees too)."""
+    rank = {'high': 3, 'medium': 2, 'low': 1}
+    found = {}
+
+    def add(row, conf, sc, via):
+        cur = found.get(row['id'])
+        if cur:
+            cur[3].add(via)
+            if rank[conf] > rank[cur[1]]:
+                cur[1], cur[2] = conf, sc
+        else:
+            found[row['id']] = [row, conf, sc, {via}]
+
+    if 'pan' in modes and pan:
+        ids = [r['rec_id'] for r in db.q('SELECT rec_id FROM rec_tok WHERE token=?', (pan.upper(),))]
+        for r in load_records(db, ids):
+            add(r, 'high', 1.0, 'pan')
+    if 'ids' in modes and folios:
+        ids = set()
+        for f in folios:
+            fk = folio_key(f)
+            ids.update(r['id'] for r in db.q('SELECT id FROM records WHERE folio_key=?', (fk,)))
+            if _dp(f):
+                ids.update(r['id'] for r in db.q('SELECT id FROM records WHERE dp_key=?', (_dp(f),)))
+        for r in load_records(db, ids):
+            add(r, 'high', 1.0, 'dp_client_id' if r['dp_key'] and r['dp_key'] in {_dp(f) for f in folios} else 'folio')
+    if 'name' in modes and name:
+        for r, conf, sc, why in find_matches(db, name, aliases, pincode, (), limit=limit, pan='', father=father, with_reason=True):
+            add(r, conf, sc, 'name+pin' if 'pin' in why else 'name')
+    if 'address' in modes and (address or city) and pincode:
+        want = addr_tokens(address, city)
+        if len(want) >= 2:
+            ids = [r['id'] for r in db.q('SELECT id FROM records WHERE pincode=? LIMIT 20000', (pincode,))]
+            for r in load_records(db, ids):
+                have = addr_tokens(r['addr'] if 'addr' in r.keys() and r['addr'] else ' '.join(norm_tokens(r['blob'])[2:]))
+                common = want & have
+                if len(common) >= 2 and len(common) / len(want) >= 0.5:
+                    add(r, 'low', len(common) / len(want), 'address')
+    for v in found.values():  # two independent keys agreeing is stronger than either alone
+        if len(v[3]) >= 2 and v[1] == 'low':
+            v[1] = 'medium'
+    res = sorted(found.values(), key=lambda x: (-rank[x[1]], -x[2], -(x[0]['amount'] or 0)))[:limit]
+    return [(r, c, s, sorted(v)) for r, c, s, v in res]
+
+
 # ---------- masking / formatting ----------
 def mask_word(w):
     return w[:1] + '*' * max(len(w) - 1, 0)

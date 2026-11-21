@@ -80,7 +80,8 @@ USER_COLS = [
 COMPANY_COLS = [('cin', 'TEXT'), ('nse_symbol', 'TEXT'), ('bse_code', 'TEXT'), ('ir_url', 'TEXT'), ('updated_at', 'TEXT')]
 LIST_COLS = [('stated_total', 'REAL'), ('validation', 'TEXT'), ('source_doc_id', 'INTEGER')]
 SESSION_COLS = [('last_seen', 'REAL')]
-RECORD_COLS = [('dp_key', 'TEXT'), ('father', 'TEXT'), ('conf_src', 'TEXT')]
+RECORD_COLS = [('dp_key', 'TEXT'), ('father', 'TEXT'), ('conf_src', 'TEXT'), ('name', 'TEXT'), ('addr', 'TEXT')]
+MATCH_COLS = [('via', 'TEXT')]
 
 
 class DB:
@@ -106,12 +107,13 @@ class DB:
         for name, typ in USER_COLS:
             if name not in have:
                 c.execute('ALTER TABLE subscribers ADD COLUMN %s %s' % (name, typ))
-        for tbl, cols in (('companies', COMPANY_COLS), ('lists', LIST_COLS), ('records', RECORD_COLS), ('sessions', SESSION_COLS)):
+        for tbl, cols in (('companies', COMPANY_COLS), ('lists', LIST_COLS), ('records', RECORD_COLS), ('sessions', SESSION_COLS), ('matches', MATCH_COLS)):
             have_t = {r['name'] for r in c.execute('PRAGMA table_info(%s)' % tbl)}
             for name, typ in cols:
                 if name not in have_t:
                     c.execute('ALTER TABLE %s ADD COLUMN %s %s' % (tbl, name, typ))
         c.execute('CREATE INDEX IF NOT EXISTS idx_rec_dp ON records(dp_key)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_rec_pin ON records(pincode)')
         c.execute('CREATE INDEX IF NOT EXISTS idx_co_isin ON companies(isin)')
         c.execute('CREATE INDEX IF NOT EXISTS idx_co_cin ON companies(cin)')
         pc = {r['name'] for r in c.execute('PRAGMA table_info(payments)')}

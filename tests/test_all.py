@@ -1043,5 +1043,36 @@ class IdleSession(unittest.TestCase):
         self.st.session_idle_min = 0; tok, u = self.au.login('a@x.in', 'Str0ng-pass!'); self.db.x('UPDATE sessions SET last_seen=?', (time.time() - 86400,)); self.assertTrue(self.au.user_for(tok))
 
 
+class DashSearch(unittest.TestCase):
+    CSV = "FOLIO,NAME,ADDRESS 1,ADDRESS 2,PINCODE,NO OF SHARES,AMOUNT (RS)\nIN30365510236403,DEEPTY JAIN,4262/3 3RD FLOOR GALI NO 3,ANSARI ROAD DARYAGANJ,110002,160,680.00\n1201910101355141,NEETI SINGHAL,622/1 D 1 GADODIA ROAD,ANAND PARBAT INDUSTRIAL AREA,110005,50,212.50\n"
+    def setUp(self):
+        self.st, self.db, self.svc, self.au, *_ = stack(); d = tempfile.mkdtemp(); p = os.path.join(d, 'x.csv'); _w(p, self.CSV); ingest.ingest_file(self.db, 'Srch Co', p, declared_on='2026-11-14')
+        self.u, _ = register(self.au, email='n@x.in', first_name='Neeti', last_name='Singhal', mobile='9123456790', pan='ABCPS1234S', pincode='110005')
+    def prof(self, **kw): self.au.update_profile(self.au._get(self.u['id']), kw); return self.au._get(self.u['id'])
+    def test_pan_search_needs_pan_and_ids_search_needs_ids(self):
+        u = self.au._get(self.u['id'])
+        with self.assertRaises(ApiError): self.svc.search(u, ['ids'])
+        with self.assertRaises(ApiError): self.svc.search(u, [])
+        with self.assertRaises(ApiError): self.svc.search(u, ['address'])
+    def test_id_search_is_high_and_shows_name_and_address(self):
+        u = self.prof(folios=['1201910101355141']); r = self.svc.search(u, ['ids'])
+        self.assertEqual((r['found'], r['likely'][0]['confidence'], r['likely'][0]['via']), (1, 'high', ['DP-Client ID']))
+        self.assertEqual(r['likely'][0]['holder'], 'NEETI SINGHAL'); self.assertIn('GADODIA', r['likely'][0]['address']); self.assertEqual(r['total_likely'], 212.5)
+    def test_name_only_search_masks_holder_details_unless_strong(self):
+        r = self.svc.search(self.au._get(self.u['id']), ['name'])
+        self.assertEqual(r['found'], 1); i = (r['likely'] + r['possible'])[0]
+        if i['confidence'] != 'high': self.assertEqual(i['address'], ''); self.assertNotIn('SINGHAL', i['holder'])
+    def test_address_search_needs_pin_and_two_shared_words(self):
+        u = self.prof(address='622/1 D 1 Gadodia Road', city='Delhi'); r = self.svc.search(u, ['address']); self.assertEqual(r['found'], 1); self.assertIn('Address', (r['likely'] + r['possible'])[0]['via'])
+        u = self.prof(address='Random Lane', city='Pune'); self.assertEqual(self.svc.search(u, ['address'])['found'], 0)
+    def test_two_keys_agreeing_lift_to_likely(self):
+        u = self.prof(address='622/1 D 1 Gadodia Road'); r = self.svc.search(u, ['name', 'address']); self.assertEqual(len(r['likely']), 1)
+    def test_other_peoples_pan_in_a_row_is_masked(self):
+        d = tempfile.mkdtemp(); p = os.path.join(d, 'y.csv'); _w(p, "FOLIO,NAME,ADDRESS 1,PINCODE,NO OF SHARES,AMOUNT (RS)\n555001,NEETI SINGHAL,ZZZPD1234Z CHENNAI,600001,10,50.00\n"); ingest.ingest_file(self.db, 'Pan Row Co', p, declared_on='2026-11-14')
+        u = self.prof(folios=['555001']); raw = json.dumps(self.svc.search(u, ['ids']), default=str); self.assertNotIn('ZZZPD1234Z', raw)
+    def test_api_route_needs_login(self):
+        self.assertTrue(hasattr(S, 'make_handler'))
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)

@@ -19,6 +19,7 @@ const MENU=[['/dashboard.html','Dashboard'],['/account.html#profile','Profile'],
 async function buildNav(){const n=document.getElementById('nav');if(!n)return;const u=await session();
   n.querySelectorAll('.keep').forEach(a=>a.remove());
   if(!u){n.insertAdjacentHTML('beforeend','<a class="keep" href="/signin.html">Sign in</a><a class="keep" href="/signup.html">Sign up free</a>');return}
+  if(!n.querySelector('a[href="/dashboard.html"]:not(.keep)'))n.insertAdjacentHTML('afterbegin','<a class="keep" href="/dashboard.html">Dashboard</a>');
   n.insertAdjacentHTML('beforeend','<div class="keep um"><button type="button" class="uav" id="umb" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">'+esc(initials(u.name))+'</button>'+
     '<div class="umenu hide" id="umm" role="menu"><div class="umh"><span class="uav big" aria-hidden="true">'+esc(initials(u.name))+'</span><div><b>'+esc(u.name)+'</b><small>'+esc(u.email)+'</small></div></div>'+
     MENU.map(m=>'<a role="menuitem" href="'+m[0]+'">'+m[1]+'</a>').join('')+'<hr><a role="menuitem" href="#" id="signout">Sign out</a></div></div>');
