@@ -61,3 +61,8 @@ Optional. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (see `.env.example`)
 * New Google users get an account with the email already verified, but no mobile number (they add and verify it in their profile before SMS / WhatsApp alerts).
 * A Google sign-in whose email matches an existing account links to it. If that account's email was never verified, its password is cancelled first, so nobody can pre-register someone else's address and keep access.
 * Google-only users can set a password any time with "Forgot your password?".
+
+
+## Hosting
+
+See `DEPLOY-HOSTINGER.md` (Hostinger Python app or VPS). `passenger_wsgi.py` is the WSGI entry point (`application`) for shared Python hosting and gunicorn.

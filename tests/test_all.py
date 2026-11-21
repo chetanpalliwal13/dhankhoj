@@ -1,4 +1,4 @@
-import json, os, sys, tempfile, threading, time, unittest, urllib.request, urllib.error, datetime as dt
+import io, json, os, sys, tempfile, threading, time, unittest, urllib.request, urllib.error, datetime as dt
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -861,6 +861,30 @@ class GoogleFlow(unittest.TestCase):
     def test_open_redirect_blocked(self):
         for bad in ('//evil.com', 'https://evil.com', '/a b', 'javascript:alert(1)'):
             c, r = self.finish('c9', self.G('nx'), bad); self.assertEqual(r.getheader('Location'), '/dashboard.html', bad)
+
+
+class Wsgi(unittest.TestCase):
+    """passenger_wsgi.py lets Hostinger / cPanel / gunicorn run the same site."""
+    @classmethod
+    def setUpClass(cls):
+        import tempfile, importlib
+        cls.tmp = tempfile.mkdtemp(); os.environ['DB_PATH'] = os.path.join(cls.tmp, 'w.db'); os.environ['BASE_URL'] = 'http://t'
+        sys.path.insert(0, ROOT); cls.w = importlib.import_module('passenger_wsgi')
+    def call(self, method='GET', path='/', body=b'', ctype=''):
+        from wsgiref.util import setup_testing_defaults
+        e = {'REQUEST_METHOD': method, 'REQUEST_URI': path, 'PATH_INFO': path.split('?')[0], 'QUERY_STRING': path.partition('?')[2], 'wsgi.input': io.BytesIO(body), 'CONTENT_LENGTH': str(len(body)), 'CONTENT_TYPE': ctype, 'HTTP_HOST': 't', 'HTTP_ORIGIN': 'http://t'}
+        setup_testing_defaults(e); got = {}
+        def sr(status, headers): got['s'], got['h'] = status, dict(headers)
+        b = b''.join(self.w.application(e, sr)); return got['s'], got['h'], b
+    def test_home_page_served_from_root(self):
+        s, h, b = self.call('GET', '/'); self.assertTrue(s.startswith('200'), s); self.assertIn(b'DhanKhoj', b); self.assertIn('text/html', h['Content-Type']); self.assertIn("default-src 'self'", h['Content-Security-Policy'])
+    def test_assets_and_api(self):
+        self.assertTrue(self.call('GET', '/css/site.css')[0].startswith('200')); self.assertTrue(self.call('GET', '/fonts/dmsans.woff')[0].startswith('200'))
+        s, h, b = self.call('GET', '/api/plan'); self.assertTrue(s.startswith('200')); self.assertEqual([t['key'] for t in json.loads(b)['tiers']], ['silver', 'gold', 'platinum'])
+    def test_post_and_cookie(self):
+        s, h, b = self.call('POST', '/api/auth/login', json.dumps({'email': 'no@x.in', 'password': 'x'}).encode(), 'application/json'); self.assertTrue(s.startswith('401'), s); self.assertFalse(json.loads(b)['ok'])
+    def test_traversal_and_404(self):
+        self.assertTrue(self.call('GET', '/../config.py')[0].startswith('404')); self.assertTrue(self.call('GET', '/nope.html')[0].startswith('404'))
 
 
 if __name__ == '__main__':
