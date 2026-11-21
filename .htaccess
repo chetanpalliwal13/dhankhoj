@@ -1,0 +1,18 @@
+# DhanKhoj on plain Hostinger web hosting (Apache / LiteSpeed).
+# 1) Show the pages from web/ at the top level, so "/" opens web/index.html.
+# 2) Never serve source code, config, data or docs from this folder.
+# NOTE: this only shows the pages. Sign-up, sign-in, payments and alerts need the Python server (see DEPLOY-HOSTINGER.md).
+Options -Indexes
+DirectoryIndex index.html
+RewriteEngine On
+
+# --- never serve these ---
+RewriteRule ^(\.git|tests|deploy|sample_data|data)(/|$) - [F,L]
+RewriteRule (^|/)\.(env|git|htaccess)  - [F,L]
+RewriteRule \.(py|pyc|db|db-wal|db-shm|sqlite|env|md|txt|zip|service|conf|example)$ - [F,L]
+
+# --- pages and assets live in web/ ---
+RewriteRule ^$ web/index.html [L]
+RewriteCond %{REQUEST_URI} !^/web/
+RewriteCond %{DOCUMENT_ROOT}/web%{REQUEST_URI} -f
+RewriteRule ^(.*)$ web/$1 [L]

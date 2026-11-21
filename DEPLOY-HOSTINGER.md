@@ -8,6 +8,8 @@ So the project has to run as a **Python app**. `passenger_wsgi.py` (in the proje
 
 ## Which Hostinger plan
 
+**Important:** Hostinger's normal web hosting (Premium, Business, "Unlimited", Cloud) runs PHP and Node.js, not Python. If hPanel has no Python option, this app cannot run there, and the `.htaccess` in the project root only makes the pages visible (no sign-up, payments or alerts) and keeps the code files private. For the real site use a **VPS** (Option B).
+
 * **Web / Cloud hosting with the Python feature** (hPanel > Websites > Advanced > Python, if you see it): follow "Option A".
 * **VPS** (any Linux VPS): follow "Option B".
 * Plain **PHP/WordPress-only shared hosting without Python**: it cannot run this app. Upgrade the plan or use a VPS.
