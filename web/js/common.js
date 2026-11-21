@@ -9,7 +9,7 @@ async function api(path,body){
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
     if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info')&&path!=='/api/auth/login')throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795269324';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795269725';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -37,6 +37,16 @@ async function buildNav(){const n=document.getElementById('nav');if(!n)return;co
   document.addEventListener('click',e=>{if(!e.target.closest('.um'))close()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();b.focus()}});
   document.getElementById('signout').addEventListener('click',async e=>{e.preventDefault();try{await api('/api/auth/logout',{})}catch(_){}location.replace('/')})}
+// ---- header: grouped dropdown menus on every page
+(function(){const n=document.getElementById('nav');if(!n)return;
+ const dd=(t,items)=>'<div class="dd"><button type="button" class="ddb" aria-expanded="false">'+t+'</button><div class="ddp">'+items.map(i=>'<a href="'+i[0]+'">'+i[1]+'<small>'+i[2]+'</small></a>').join('')+'</div></div>';
+ n.innerHTML=dd('Product',[['/dashboard.html','Dashboard','Search and track your dividends'],['/coverage.html','Coverage','Which companies we have checked'],['/upgrade.html','Pricing','Free and paid plans']])+
+  dd('Learn',[['/#how','How it works','The seven-year rule explained'],['/claim.html','How to claim','Step-by-step, free of charge'],['/#faq','Questions','Short answers']])+
+  dd('Company',[['/about.html','About us','Who builds DhanKhoj'],['/contact.html','Contact &amp; support','Write to us'],['/feedback.html','Feedback','Tell us what to improve']])+'<a href="/upgrade.html">Pricing</a>';
+ n.addEventListener('click',e=>{const b=e.target.closest('.ddb');document.querySelectorAll('.dd.open').forEach(d=>{if(!b||d!==b.parentElement)d.classList.remove('open')});if(b){const d=b.parentElement;d.classList.toggle('open');b.setAttribute('aria-expanded',d.classList.contains('open'))}});
+ document.addEventListener('click',e=>{if(!e.target.closest('.dd'))document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'))});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'))});
+ const sc=()=>document.body.classList.toggle('scrolled',scrollY>24);addEventListener('scroll',sc,{passive:true});sc()})();
 buildNav();
 
 // ---- Sign in with Google: buttons stay hidden until the server says it is configured
