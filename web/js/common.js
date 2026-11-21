@@ -9,7 +9,7 @@ async function api(path,body){
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
     if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info'))throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795267559';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795268871';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -64,5 +64,13 @@ if(!document.getElementById('lmod'))initGoogle();
 // Back / forward button after sign-out: a page restored from the browser's memory is re-checked, so signed-out visitors never see account pages
 window.addEventListener('pageshow',e=>{if(e.persisted)location.reload()});
 
-// ---- footer: About / Contact / Feedback links on every page
-(function(){const f=document.querySelector('footer .wrap');if(f&&!f.querySelector('a[href="/contact.html"]'))f.insertAdjacentHTML('beforeend',' - <a href="/about.html">About</a> - <a href="/contact.html">Contact &amp; support</a> - <a href="/feedback.html">Feedback</a>')})();
+// ---- site footer (replaces each page's plain footer on every page)
+(function(){document.querySelectorAll('footer').forEach(f=>f.remove());
+ const f=document.createElement('footer');f.className='sitefoot';
+ f.innerHTML='<div class="wrap"><div class="fcols"><div><a class="fb" href="/"><img src="/favicon.svg" width="30" height="30" alt="">DhanKhoj</a><p>Find the dividends you forgot to collect, before they move to the government fund.</p></div>'+
+ '<div><h4>Product</h4><ul><li><a href="/signup.html">Create free account</a></li><li><a href="/upgrade.html">Pricing</a></li><li><a href="/coverage.html">Coverage</a></li><li><a href="/claim.html">How to claim</a></li></ul></div>'+
+ '<div><h4>Company</h4><ul><li><a href="/about.html">About us</a></li><li><a href="/contact.html">Contact &amp; support</a></li><li><a href="/feedback.html">Feedback</a></li></ul></div>'+
+ '<div><h4>Legal</h4><ul><li><a href="/terms.html">Terms &amp; refunds</a></li><li><a href="/privacy.html">Privacy notice</a></li></ul></div></div>'+
+ '<p class="fdisc">DhanKhoj is an independent information service. It is not affiliated with SEBI, the IEPF Authority, any stock exchange or any company, and it is not investment or legal advice. Matches are estimates from published lists and may be wrong or incomplete; deadlines shown are estimates. Always confirm with the company or its registrar.</p>'+
+ '<div class="fbar"><span>&copy; '+new Date().getFullYear()+' DhanKhoj</span><span>Made in India</span></div></div>';
+ document.body.appendChild(f)})();
