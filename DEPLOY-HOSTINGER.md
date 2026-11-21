@@ -25,7 +25,7 @@ So the project has to run as a **Python app**. `passenger_wsgi.py` (in the proje
    APP_SALT=<long random text>
    DATA_KEY=<another long random text>
    ADMIN_TOKEN=<a long secret for the admin page>
-   SMTP_HOST=...  SMTP_PORT=587  SMTP_USER=...  SMTP_PASS=...  MAIL_FROM=...   # so verification and reset emails can be sent
+   SMTP_HOST=...  SMTP_PORT=587  SMTP_USER=...  SMTP_PASS=...  SMTP_FROM=...   # so verification and reset emails can be sent
    TRUST_PROXY=1
    ```
    Do **not** set `DEV_MODE`. Add `PAY_PROVIDER=razorpay` with the Razorpay keys, and `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` when you are ready (see README).
@@ -38,7 +38,7 @@ So the project has to run as a **Python app**. `passenger_wsgi.py` (in the proje
 7. **Data:** the database is created in the `data/` folder inside the application root. Back it up regularly, and do not put the project inside a folder that is served as static files.
 
 Payment and Google settings that must match your domain:
-* Razorpay webhook URL: `https://your-domain.com/api/pay/webhook`
+* Razorpay webhook URL: `https://your-domain.com/api/webhook/razorpay`
 * Google redirect URI: `https://your-domain.com/auth/google/callback`
 
 ## Option B: VPS
