@@ -3,7 +3,11 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const inr=n=>{n=Number(n||0);return '₹'+n.toLocaleString('en-IN',n>=10000?{maximumFractionDigits:0}:{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2})};
 async function api(path,body){
   const o=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)};
+  if(window.demoApi)return window.demoApi(path,body);
   let r;try{r=await fetch(path,o)}catch(e){throw new Error('Network problem. Please try again.')}
+  if(!(r.headers.get('content-type')||'').includes('json')){  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
 }

@@ -258,3 +258,4 @@ table.mt tfoot td{border-bottom:0;font-size:15px;padding-top:14px}
 table.mt{min-width:980px}
 
 .hide{display:none!important}
+#prevbar{background:var(--gold);color:var(--night);text-align:center;font-size:14px;padding:8px 14px;position:sticky;top:0;z-index:80}
