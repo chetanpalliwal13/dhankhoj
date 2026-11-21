@@ -9,7 +9,7 @@ async function api(path,body){
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
     if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info'))throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795263800';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795267559';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -51,7 +51,7 @@ if(!document.getElementById('lmod'))initGoogle();
 
 // ---- signed-in visitors: skip the home page, and sign out after a few idle minutes
 (async function(){const u=await session();if(!u)return;
-  if((location.pathname==='/'||location.pathname==='/index.html')&&!/[?&]home=1/.test(location.search)&&!(document.referrer&&new URL(document.referrer).origin===location.origin)){location.replace('/dashboard.html');return}
+  if(location.pathname==='/'||location.pathname==='/index.html'){location.replace('/dashboard.html');return}
   const idle=(u.idle_min||0)*60000;if(!idle)return;
   let last=Date.now(),pinged=Date.now(),warned=false,toast=null;
   const bump=()=>{last=Date.now();if(warned){warned=false;if(toast){toast.remove();toast=null}}if(Date.now()-pinged>60000){pinged=Date.now();api('/api/session/ping',{}).catch(()=>{})}};
