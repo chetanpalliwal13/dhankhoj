@@ -9,7 +9,7 @@ async function api(path,body){
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
     if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info')&&!path.startsWith('/api/testimonials')&&path!=='/api/auth/login')throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795353203';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795353592';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -34,7 +34,7 @@ let _shell=false;
 function ensureShell(){const h=document.querySelector('header.top');if(!h||_shell)return;_shell=true;
   const nm=PAGES[location.pathname]||String(document.title||'').split(' - ')[0];
   if(location.pathname!=='/'&&location.pathname!=='/index.html')h.querySelector('.logo').insertAdjacentHTML('afterend','<span class="hsep" aria-hidden="true">/</span><span class="hpage">'+esc(nm)+'</span>');
-  h.insertAdjacentHTML('beforeend','<div class="hs" id="hs" role="search"><input id="hsq" type="search" autocomplete="off" placeholder="Search stocks and dividends…" aria-label="Search a company or ticker" aria-controls="hsr" aria-expanded="false"><kbd class="hsk" aria-hidden="true">Ctrl K</kbd><div class="hsr hide" id="hsr" role="listbox"></div></div><div class="hr" id="hr"></div>');initSearch();
+  h.insertAdjacentHTML('beforeend','<div class="hs" id="hs" role="search"><input id="hsq" type="search" name="dk-site-search" autocomplete="off" data-lpignore="true" data-form-type="other"  placeholder="Search stocks and dividends…" aria-label="Search a company or ticker" aria-controls="hsr" aria-expanded="false"><kbd class="hsk" aria-hidden="true">Ctrl K</kbd><div class="hsr hide" id="hsr" role="listbox"></div></div><div class="hr" id="hr"></div>');initSearch();
   document.addEventListener('click',e=>{
     if(e.target.closest('#tgl')){setTheme(curTheme()==='dark'?'light':'dark');return}
     const hb=e.target.closest('#hbm');if(hb){const o=document.body.classList.toggle('navopen');hb.setAttribute('aria-expanded',o?'true':'false');return}
@@ -65,7 +65,7 @@ async function buildNav(){ensureShell();const n=document.getElementById('nav'),r
  const sc=()=>document.body.classList.toggle('scrolled',scrollY>24);addEventListener('scroll',sc,{passive:true});sc()})();
 
 // ---- header search (sample companies) and the assistant launcher. Both load their code only when first used.
-function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795353203';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795353592';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
 let _dx=null;function loadDX(){return _dx||(_dx=loadJS('/js/divdata.js').then(()=>loadJS('/js/dxengine.js')).then(()=>window.dxLoad()))}
 function initSearch(){const q=document.getElementById('hsq'),box=document.getElementById('hsr');if(!q)return;let rows=[],sel=-1,list=[];
   const close=()=>{box.classList.add('hide');q.setAttribute('aria-expanded','false');sel=-1};
@@ -144,3 +144,8 @@ window.openAuth=function(mode,opts){if(!_amp)_amp=new Promise((ok,no)=>{const sc
 document.addEventListener('click',e=>{if(e.defaultPrevented||e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
   const a=e.target.closest('a[href]');if(!a||a.target==='_blank')return;const m=/^\/(signin|signup)\.html(\?(.*))?$/.exec(a.getAttribute('href')||'');if(!m)return;
   if(location.pathname==='/'+m[1]+'.html')return;e.preventDefault();const nx=new URLSearchParams(m[3]||'').get('next');openAuth(m[1],nx&&/^\/[A-Za-z0-9_\-.\/?=&%]*$/.test(nx)&&!nx.startsWith('//')?{next:nx}:{})});
+// Browsers sometimes autofill the signed-in email into search boxes. Keep them read-only until the person clicks or tabs in, and clear anything they did not type.
+(function(){const guard=()=>document.querySelectorAll('input[type=search]').forEach(q=>{if(q.dataset.ag)return;q.dataset.ag='1';q.setAttribute('autocomplete','off');q.setAttribute('data-lpignore','true');q.setAttribute('data-form-type','other');if(!q.name)q.name='dk-q-'+(q.id||'s');
+ const had=q.value;q.readOnly=true;const open=()=>{q.readOnly=false};q.addEventListener('focus',open);q.addEventListener('pointerdown',open);
+ [150,600,1500].forEach(t=>setTimeout(()=>{if(document.activeElement!==q&&q.value&&q.value!==had)q.value=''},t))});
+ guard();new MutationObserver(guard).observe(document.documentElement,{childList:true,subtree:true})})();

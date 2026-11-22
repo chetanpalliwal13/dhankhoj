@@ -341,3 +341,4 @@ html[data-theme=dark] .hform{background:var(--card);border-color:var(--line);box
 .ab-hero,.ct-hero{padding-top:6px!important}.hero{padding-top:8px!important}
 .appmain>h1#at{font:700 22px var(--hf);margin:6px 0 14px}.side hr{border:0;border-top:1px solid var(--line);margin:10px 4px}
 .appmain #main{background:none!important;padding:0!important;border:0!important;box-shadow:none!important}
+.ab-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.ab-note{margin:16px 0 0;color:var(--mut);max-width:760px}.ab-list{margin:0;padding-left:20px;display:grid;gap:10px}@media(max-width:800px){.ab-2{grid-template-columns:1fr}}
