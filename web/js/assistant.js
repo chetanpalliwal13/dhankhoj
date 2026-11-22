@@ -6,8 +6,9 @@ let rows=[],panel,log,inp,last=null,opener=null;
 const SEC=[[/bank/,'Banking'],[/\b(it|tech|software|infotech|digital)\b/,'IT'],[/pharma|drug|medicine/,'Pharma'],[/fmcg|consumer|food/,'FMCG'],[/\bauto|motor|tyre/,'Auto'],[/cement|building/,'Cement'],[/power|utilit|hydro|thermal/,'Power'],[/\benergy|oil|gas|refin/,'Energy'],[/metal|steel|mining|coal|zinc/,'Metals & Mining'],[/financ|nbfc|insur|housing/,'Finance'],[/chemical|fertili[sz]er|paint/,'Chemicals'],[/industrial|engineering|logistic|rail|infra/,'Industrials']];
 const SUG=['Top 5 large cap dividend stocks','Best total return in 5 years','Most consistent dividend payers','High yield with safe payout','What is unclaimed dividend?','Next ex-dividend dates'];
 function parse(t){const o={},w=t.toLowerCase();
+ let mm=w.match(/(\d+)\s*(?:m|mo|mos|month|months)\b/);if(mm){const n=+mm[1];o.period=n>=12?'1y':[1,3,6].reduce((a,b)=>Math.abs(b-n)<Math.abs(a-n)?b:a)+'m'}else if(/last month|past month|this month/.test(w))o.period='1m';else if(/quarter(?!ly)/.test(w))o.period='3m';
  let m=w.match(/(?:last|past|over|in|for|of)\s*(?:the\s*)?(\d+)\s*(?:y|yr|yrs|year|years)\b(?!\s*(?:of|in a row|straight|consecutive|consistent))/)||w.match(/\b(\d+)\s*(?:y|yr)\b/);
- if(m){const n=+m[1];o.period=[1,3,5,10].reduce((a,b)=>Math.abs(b-n)<Math.abs(a-n)?b:a)}else if(/last year|past year|this year|1 year/.test(w))o.period=1;
+ if(m&&!o.period){const n=+m[1];o.period=[1,3,5,10].reduce((a,b)=>Math.abs(b-n)<Math.abs(a-n)?b:a)}else if(!o.period&&/last year|past year|this year|1 year/.test(w))o.period=1;
  m=w.match(/(\d+)\s*(?:\+\s*)?(?:years?|yrs?)\s*(?:of|in a row|straight|consecutive|without)/);if(m)o.years=+m[1];
  else if(/consistent|regular|streak|every year|in a row/.test(w)&&!o.years)o.flagCons=1;
  m=w.match(/top\s*(\d+)|(\d+)\s*(?:best|top)|best\s*(\d+)|first\s*(\d+)|\b(\d+)\s*(?:stocks|companies|shares)/);if(m){o.n=Math.min(20,+(m[1]||m[2]||m[3]||m[4]||m[5]))}

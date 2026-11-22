@@ -66,7 +66,7 @@ async function buildNav(){ensureShell();const n=document.getElementById('nav'),r
  const sc=()=>document.body.classList.toggle('scrolled',scrollY>24);addEventListener('scroll',sc,{passive:true});sc()})();
 
 // ---- header search (sample companies) and the assistant launcher. Both load their code only when first used.
-function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795348239';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795348633';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
 let _dx=null;function loadDX(){return _dx||(_dx=loadJS('/js/divdata.js').then(()=>loadJS('/js/dxengine.js')).then(()=>window.dxLoad()))}
 function initSearch(){const q=document.getElementById('hsq'),box=document.getElementById('hsr');if(!q)return;let rows=[],sel=-1,list=[];
   const close=()=>{box.classList.add('hide');q.setAttribute('aria-expanded','false');sel=-1};
@@ -114,7 +114,8 @@ window.addEventListener('pageshow',e=>{if(e.persisted)location.reload()});
 (function(){document.querySelectorAll('footer').forEach(f=>f.remove());
  const f=document.createElement('footer');f.className='sitefoot';
  f.innerHTML='<div class="wrap"><div class="fcols"><div><a class="fb" href="/"><img src="/favicon.svg" width="30" height="30" alt="">DhanKhoj</a><p>Find the dividends you forgot to collect, before they move to the government fund.</p></div>'+
- '<div><h4>Product</h4><ul><li><a href="/signup.html">Create free account</a></li><li><a href="/upgrade.html">Pricing</a></li><li><a href="/coverage.html">Coverage</a></li><li><a href="/claim.html">How to claim</a></li></ul></div>'+
+ '<div><h4>Product</h4><ul><li><a href="/#check">Dividend Money Finder</a></li><li><a href="/insights.html">Best Dividend Search</a></li><li><a href="/insights.html?metric=yield">Top Percent Dividend</a></li><li><a href="/insights.html?metric=divret&amp;period=1y">High dividend earning stocks</a></li><li><a href="/signup.html">Create free account</a></li></ul></div>'+
+ '<div><h4>Learn</h4><ul><li><a href="/claim.html">How to claim</a></li><li><a href="/#how">How it works</a></li><li><a href="/coverage.html">Coverage</a></li><li><a href="/upgrade.html">Pricing</a></li></ul></div>'+
  '<div><h4>Company</h4><ul><li><a href="/about.html">About us</a></li><li><a href="/contact.html">Contact &amp; support</a></li><li><a href="/stories.html">Customer stories</a></li><li><a href="/feedback.html">Feedback</a></li></ul></div>'+
  '<div><h4>Legal</h4><ul><li><a href="/terms.html">Terms &amp; refunds</a></li><li><a href="/privacy.html">Privacy notice</a></li></ul></div></div>'+
  '<p class="fdisc">DhanKhoj is an independent information service. It is not affiliated with SEBI, the IEPF Authority, any stock exchange or any company, and it is not investment or legal advice. Matches are estimates from published lists and may be wrong or incomplete; deadlines shown are estimates. Always confirm with the company or its registrar.</p>'+

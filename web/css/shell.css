@@ -206,3 +206,4 @@ body.dka-open .dka{display:none}
 @media(max-width:1280px){.hs{flex-basis:250px}}@media(max-width:1180px){.hs{flex-basis:190px}.hsk{display:none}.hs input{padding-right:12px}}
 @media(max-width:980px){.hs{flex:1 1 auto}}
 @media(max-width:520px){.hs input{height:40px;padding:9px 0}.hs:focus-within input{padding:9px 12px 9px 34px}}
+.fcols{grid-template-columns:1.5fr repeat(4,1fr)!important}@media(max-width:900px){.fcols{grid-template-columns:1fr 1fr!important}.fcols>div:first-child{grid-column:1/-1}}

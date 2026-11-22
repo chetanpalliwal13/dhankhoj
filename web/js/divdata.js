@@ -31,10 +31,11 @@ function build(r){const R=rng(r.sym),N=121,now=new Date(),y0=now.getFullYear();
  for(let i=N-2;i>=0;i--){const sh=(R()-.5)*.11;px[i]=Math.max(r.price*.02,px[i+1]/(1+mu+sh*.9))}
  const n=FQ[r.freq]||1,divs=[],gr=Math.max(.01,r.cagr/100*.7);
  for(let k=0;k<10;k++){const y=y0-k;const paid=k<Math.min(10,r.years);divs.push({y:y,dps:paid?Math.round(r.dps/Math.pow(1+gr,k)*100)/100:0,n:paid?n:0})}
- const ret=P=>{const m=P*12,p0=px[N-1-m];if(!p0)return null;const d=divs.slice(0,P).reduce((a,x)=>a+x.dps,0);
-  return{price:(r.price/p0-1)*100,div:d/p0*100,total:((r.price/p0-1)+d/p0)*100,dps:d,pays:divs.slice(0,P).reduce((a,x)=>a+x.n,0)}};
+ const pay=[];divs.forEach(dv=>{for(let j=0;j<dv.n;j++){const mon=dv.n===1?5:dv.n===2?[4,10][j]:[1,4,7,10][j];const back=(y0-dv.y)*12+(now.getMonth()-mon);if(back>=0&&back<=120)pay.push({back:back,amt:dv.dps/dv.n})}});
+ const ret=m=>{const p0=px[N-1-m];if(!p0)return null;const w=pay.filter(x=>x.back<m),d=w.reduce((a,x)=>a+x.amt,0);
+  return{price:(r.price/p0-1)*100,div:d/p0*100,total:((r.price/p0-1)+d/p0)*100,dps:d,pays:w.length}};
  const cap={Large:[60000,400000],Mid:[12000,50000],Small:[1500,9000]}[r.cap]||[1000,5000];
- r.mcap=Math.round(cap[0]+R()*(cap[1]-cap[0]));r.hist=px;r.divs=divs;r.ret={1:ret(1),3:ret(3),5:ret(5),10:ret(10)};
+ r.mcap=Math.round(cap[0]+R()*(cap[1]-cap[0]));r.hist=px;r.divs=divs;r.pay=pay;r.ret={'1m':ret(1),'3m':ret(3),'6m':ret(6),1:ret(12),3:ret(36),5:ret(60),10:ret(120)};
  r.pays10=divs.reduce((a,x)=>a+x.n,0);r.chg1=r.ret[1].price;r.name_l=(r.name+' '+r.sym).toLowerCase();return r}
 let _all=null;
 const base=window.dxLoad;
