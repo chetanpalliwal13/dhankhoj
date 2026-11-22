@@ -25,7 +25,7 @@ function render(){const r=R,rt=r.ret;
  '<div class="st-two"><div class="dxcard"><h3>What you would have earned</h3><div class="ins-tw st-tw"><table class="ins-t"><thead><tr><th>Period</th><th class="r">Price</th><th class="r">Dividends</th><th class="r">Total</th><th class="r">Payouts</th></tr></thead><tbody>'+['1m','3m','6m',1,3,5,10].map(rb).join('')+'</tbody></table></div></div>'+
  '<div class="dxcard"><h3>Dividend a share, by year</h3><div class="dvb">'+bars+'</div></div></div>'+
  (sim.length?'<div class="dxcard"><h3>Other '+esc(r.sector)+' dividend payers</h3><ul>'+sim.map(x=>'<li><a href="/stock.html?sym='+x.r.sym+'"><b>'+esc(x.r.name)+'</b><small>'+x.r.sym+'</small></a><em>'+F.pc(x.r.yield)+'</em></li>').join('')+'</ul></div>':'')+
- '<p class="st-ask"><button type="button" class="btn" id="askst">Ask the assistant about '+esc(r.name)+'</button></p><p class="mut st-note">Figures and chart use sample data and are for information only, not investment advice. Past dividends do not promise future ones.</p>';
+ '<p class="st-ask"><button type="button" class="btn ghost" id="wst" aria-pressed="'+window.dkWatch.has(r.sym)+'">'+(window.dkWatch.has(r.sym)?'★ In your watchlist':'☆ Add to watchlist')+'</button> <button type="button" class="btn" id="askst">Ask the assistant about '+esc(r.name)+'</button></p><p class="mut st-note">Figures and chart use sample data and are for information only, not investment advice. Past dividends do not promise future ones.</p>';
  bind()}
 function bind(){const s=document.getElementById('pcs');if(!s)return;const px=R.hist,N=px.length,k=Math.min(rng+1,N),off=N-k,W=720,L=52,Rr=12;
  const cx=document.getElementById('pcx'),cd=document.getElementById('pcd'),v=document.getElementById('pcv');
@@ -34,6 +34,7 @@ function bind(){const s=document.getElementById('pcs');if(!s)return;const px=R.h
   cx.setAttribute('x1',xx);cx.setAttribute('x2',xx);cx.style.display='';cd.setAttribute('cx',xx);cd.setAttribute('cy',yy);cd.style.display='';v.textContent=mdate(off+i,N)+': '+F.rs(px[off+i])}
  s.addEventListener('pointermove',mv);s.addEventListener('pointerleave',()=>{cx.style.display='none';cd.style.display='none';v.textContent=''})}
 document.addEventListener('click',e=>{const b=e.target.closest('#rg button');if(b&&R){rng=+b.dataset.r;document.querySelectorAll('#rg button').forEach(x=>x.classList.toggle('on',x===b));document.getElementById('chw').innerHTML=chart();bind();return}
+ if(e.target.id==='wst'&&R){const on=window.dkWatch.toggle(R.sym);e.target.textContent=on?'★ In your watchlist':'☆ Add to watchlist';e.target.setAttribute('aria-pressed',on);return}
  if(e.target.id==='askst'&&window.dkAssistant)window.dkAssistant.open('Tell me about '+R.name)});
 window.dxLoad().then(rows=>{window.__rows=rows;const sym=(new URLSearchParams(location.search).get('sym')||'').toUpperCase();R=window.DX_BY[sym];
  if(!R){root.innerHTML='<h1>Company not found</h1><p>We could not find “'+esc(sym||'')+'” in the sample data. Use the search at the top, or <a href="/insights.html">browse the rankings</a>.</p>';return}

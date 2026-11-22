@@ -47,6 +47,7 @@ function ensureShell(){const h=document.querySelector('header.top');if(!h||_shel
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('acm'),b=document.getElementById('acb');if(m&&!m.classList.contains('hide')){m.classList.add('hide');b.setAttribute('aria-expanded','false');b.focus()}document.body.classList.remove('navopen')}})}
 async function buildNav(){ensureShell();const n=document.getElementById('nav'),r=document.getElementById('hr');if(!n||!r)return;const u=await session();
   n.querySelectorAll('.keep,.dsh').forEach(a=>a.remove());
+  if(u){const co=[...n.querySelectorAll('.dd')].find(d=>/^Company/.test(d.textContent));if(co)co.outerHTML='<div class="dd"><button type="button" class="ddb" aria-expanded="false">Help</button><div class="ddp"><a href="/contact.html">Contact &amp; support<small>Write to us</small></a><a href="/claim.html">How to claim<small>Step-by-step, free of charge</small></a><a href="/feedback.html">Feedback<small>Tell us what to improve</small></a></div></div>'}
   const t=curTheme(),th='<button type="button" class="tgl" id="tgl" aria-label="'+(t==='dark'?'Switch to light theme':'Switch to dark theme')+'">'+I_SUN+I_MOON+'</button>',hb='<button type="button" class="hbm" id="hbm" aria-label="Menu" aria-expanded="false">'+I_MENU+'</button>';
   if(!u){r.innerHTML=th+'<a class="hsi" href="/signin.html">Sign in</a><a class="hsu" href="/signup.html">Sign up free</a>'+hb;return}
   const pn=u.plan&&u.plan.active?'<span class="pill">'+esc(u.plan.label)+' plan</span>':'<span class="pill">Free plan</span>';
@@ -65,7 +66,7 @@ async function buildNav(){ensureShell();const n=document.getElementById('nav'),r
  const sc=()=>document.body.classList.toggle('scrolled',scrollY>24);addEventListener('scroll',sc,{passive:true});sc()})();
 
 // ---- header search (sample companies) and the assistant launcher. Both load their code only when first used.
-function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795349282';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795349498';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
 let _dx=null;function loadDX(){return _dx||(_dx=loadJS('/js/divdata.js').then(()=>loadJS('/js/dxengine.js')).then(()=>window.dxLoad()))}
 function initSearch(){const q=document.getElementById('hsq'),box=document.getElementById('hsr');if(!q)return;let rows=[],sel=-1,list=[];
   const close=()=>{box.classList.add('hide');q.setAttribute('aria-expanded','false');sel=-1};

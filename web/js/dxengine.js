@@ -23,5 +23,7 @@ function query(rows,o){o=o||{};const m=M[o.metric]||M.yield,p=pk(o.period);
  return{items:out.slice(0,o.n||10),total:out.length,metric:o.metric&&M[o.metric]?o.metric:'yield',period:p,m:m}}
 function title(o){const m=M[o.metric]||M.yield;const p=m.per?' over '+PL[pk(o.period)]:'';return m.label+p}
 function link(o){const q=[];['metric','period','cap','sector','min','years','n','freq','maxPayout','minGrowth'].forEach(k=>{if(o[k]!=null&&o[k]!=='')q.push(k+'='+encodeURIComponent(o[k]))});return '/insights.html?'+q.join('&')+'#table'}
+const WK='dk_watch';function wget(){try{const a=JSON.parse(localStorage.getItem(WK)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}}
+window.dkWatch={get:wget,has:s=>wget().indexOf(s)>=0,toggle:s=>{let a=wget();const i=a.indexOf(s);if(i>=0)a.splice(i,1);else a.push(s);try{localStorage.setItem(WK,JSON.stringify(a.slice(0,50)))}catch(e){}return i<0}};
 window.DX={M:M,PER:PER,PL:PL,pk:pk,query:query,title:title,link:link};
 })();
