@@ -541,7 +541,7 @@ class Service:
                          '(SELECT COUNT(*) FROM lists l WHERE l.company_id=c.id) lists, '
                          '(SELECT l.validation FROM lists l WHERE l.company_id=c.id ORDER BY l.id DESC LIMIT 1) validation, '
                          '(SELECT t.last_checked FROM crawl_targets t WHERE t.company_id=c.id ORDER BY t.last_checked DESC LIMIT 1) last_checked '
-                         'FROM companies c ' + where + ' ORDER BY (last_list IS NULL), c.name LIMIT ?', args + [min(max(int(limit), 1), 500)])
+                         'FROM companies c ' + where + ' ORDER BY (last_list IS NULL), c.name LIMIT ?', args + [min(max(int(limit), 1), 1000)])
         total = self.db.one('SELECT COUNT(*) n FROM companies')['n']
         covered = self.db.one('SELECT COUNT(DISTINCT company_id) n FROM lists')['n']
         out = []
