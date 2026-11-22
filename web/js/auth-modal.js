@@ -5,7 +5,7 @@ const ic=p=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 const MAIL=ic('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/>'),LOCK=ic('<rect x="5" y="11" width="14" height="9.5" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),USER=ic('<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>'),PHONE=ic('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>');
 const fld=(id,label,icon,attrs)=>'<label for="'+id+'">'+label+'</label><div class="fld">'+icon+'<input id="'+id+'" '+attrs+'></div>';
 const HTML='<div class="amb" role="document"><button type="button" class="amx" id="amx" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>'+
- '<div class="amlogo"><img src="/favicon.svg" width="34" height="34" alt=""><b>DhanKhoj</b></div>'+
+ '<div class="amlogo"><img class="lg" src="/img/dhankhoj-logo.png" width="145" height="50" alt="DhanKhoj"></div>'+
  '<div id="amview"><h2 id="amt"></h2><p class="amsub" id="amsub"></p><div id="amnote" class="amnote hide"></div>'+
  '<div class="amtabs" role="tablist"><button type="button" role="tab" data-m="signin">Sign In</button><button type="button" role="tab" data-m="signup">Sign Up</button></div>'+
  '<button type="button" class="amg" id="amg">'+G+'<span id="amgt"></span></button><div class="amor"><span>Or continue with email</span></div><div id="amm" class="msg hide" role="alert"></div>'+

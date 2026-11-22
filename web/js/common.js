@@ -112,7 +112,7 @@ window.addEventListener('pageshow',e=>{if(e.persisted)location.reload()});
 // ---- site footer (replaces each page's plain footer on every page)
 (function(){document.querySelectorAll('footer').forEach(f=>f.remove());
  const f=document.createElement('footer');f.className='sitefoot';
- f.innerHTML='<div class="wrap"><div class="fcols"><div><a class="fb" href="/"><img src="/favicon.svg" width="30" height="30" alt="">DhanKhoj</a><p>Find the dividends you forgot to collect, before they move to the government fund.</p></div>'+
+ f.innerHTML='<div class="wrap"><div class="fcols"><div><a class="fb" href="/"><img class="lg" src="/img/dhankhoj-logo.png" width="145" height="50" alt="DhanKhoj"></a><p>Find the dividends you forgot to collect, before they move to the government fund.</p></div>'+
  '<div><h4>Product</h4><ul><li><a href="/#check">Dividend Money Finder</a></li><li><a href="/insights.html">Best Dividend Search</a></li><li><a href="/insights.html?metric=yield">Top Percent Dividend</a></li><li><a href="/insights.html?metric=divret&amp;period=1y">High dividend earning stocks</a></li><li><a href="/signup.html">Create free account</a></li></ul></div>'+
  '<div><h4>Learn</h4><ul><li><a href="/claim.html">How to claim</a></li><li><a href="/#how">How it works</a></li><li><a href="/coverage.html">Coverage</a></li><li><a href="/upgrade.html">Pricing</a></li></ul></div>'+
  '<div><h4>Company</h4><ul><li><a href="/about.html">About us</a></li><li><a href="/contact.html">Contact &amp; support</a></li><li><a href="/stories.html">Customer stories</a></li><li><a href="/feedback.html">Feedback</a></li></ul></div>'+

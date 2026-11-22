@@ -1,3 +1,14 @@
+@font-face{font-family:"Inter";src:url(/fonts/inter-400.woff) format("woff");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"DM Sans";src:url(/fonts/inter-400.woff) format("woff");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Inter";src:url(/fonts/inter-500.woff) format("woff");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"DM Sans";src:url(/fonts/inter-500.woff) format("woff");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Inter";src:url(/fonts/inter-600.woff) format("woff");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"DM Sans";src:url(/fonts/inter-600.woff) format("woff");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"Inter";src:url(/fonts/inter-700.woff) format("woff");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"DM Sans";src:url(/fonts/inter-700.woff) format("woff");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"Inter";src:url(/fonts/inter-800.woff) format("woff");font-weight:800;font-style:normal;font-display:swap}
+@font-face{font-family:"DM Sans";src:url(/fonts/inter-800.woff) format("woff");font-weight:800;font-style:normal;font-display:swap}
+html,body,button,input,select,textarea{font-family:Inter,"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 /* ===== app shell: fixed top bar (same on every page) + light / dark theme ===== */
 :root{--hh:78px;--pbh:0px;--hbg:#fff;--hline:#E3E7EE;--htx:#1B2430}
 html[data-theme=dark]{color-scheme:dark;--bg:#0F1319;--ink:#E8ECF2;--mut:#9BA5B4;--card:#171C24;--line:#2A313C;--soft:#1F2733;--hbg:#141920;--hline:#262C36;--htx:#E8ECF2;--g2:#6FDDB5}
@@ -109,7 +120,7 @@ body.amopen{overflow:hidden}
 .am{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:16px;background:rgba(9,18,32,.56);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 .am.hide{display:none}
 .am .amb{position:relative;width:min(468px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--card,#fff);color:var(--ink);border-radius:22px;padding:26px 28px 24px;box-shadow:0 40px 90px -30px rgba(0,0,0,.6);border:1px solid var(--line)}
-.am .amlogo{display:flex;align-items:center;gap:10px;margin:0 0 18px}.am .amlogo b{font:400 21px "Archivo Black","DM Sans",sans-serif;color:var(--ink)}
+.am .amlogo{display:flex;align-items:center;gap:10px;margin:0 0 18px}.am .amlogo b{font:800 21px Inter,sans-serif;color:var(--ink)}
 .am .amx{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:50%;border:0;background:transparent!important;color:var(--mut)!important;display:grid;place-items:center;padding:0;margin:0;cursor:pointer;box-shadow:none}
 .am .amx:hover{background:var(--soft)!important;color:var(--ink)!important;transform:none}.am .amx svg{width:20px;height:20px}
 .am h2{font:800 27px/1.15 "DM Sans",sans-serif;letter-spacing:-.02em;margin:4px 0 6px;color:var(--ink)}
@@ -480,3 +491,21 @@ html[data-theme=dark] .nh-c a,html[data-theme=dark] .pt-g a{border-color:#2B3C31
 html[data-theme=dark] .ns-r{background:#16211A}html[data-theme=dark] .ns-l,html[data-theme=dark] .ns-h h2{color:#E4F2E8!important}html[data-theme=dark] .nh .nh-g .nh-s{background:linear-gradient(180deg,#121B15,#0F1913)!important}
 @media(max-height:800px){.ns-r .tt{width:50px!important;height:50px!important}.ns-l{font-size:14.5px!important}.ns-v{font-size:24px!important}.ns-hi{width:38px;height:38px}}
 .ns-h h2{font-size:15.5px!important}.ns-l{font-size:16px!important}.ns-h .tag{padding:5px 10px;font-size:11.5px}
+/* v7: one content width and one left/right edge on every page (header, sections, footer) */
+:root{--cw:1560px}
+html body .wrap,html body .dash .wrap,html body .nh>.wrap,html body .nh-e.wrap,html body .hp>.wrap:has(.nh-e){max-width:var(--cw)!important;margin-left:auto;margin-right:auto}
+html body .wrap>header.top.top{padding-left:max(clamp(16px,3vw,40px),calc((100vw - var(--cw))/2 + 20px))!important;padding-right:max(clamp(16px,3vw,40px),calc((100vw - var(--cw))/2 + 20px))!important}
+.nh .nh-g{max-width:none!important;width:100%;--iw:min(calc(var(--cw) - 40px - var(--rw) - 16px),calc(100vw - var(--rw) - 80px),calc((var(--avail) - 96px) * 1.5))}
+.nh .nh-g{justify-content:center}
+.pt-g,.nh-c{max-width:none!important}
+.sec-h,.ins-hero,.ab-hero,.ct-hero{max-width:none}
+.pricing{max-width:none!important}
+.nh-h2b{margin:38px 0 16px!important}
+.ns-h{flex-wrap:wrap;row-gap:6px}.ns-h h2{flex:1 1 calc(100% - 62px)!important}.ns-h .tag{margin-left:58px}
+/* v8: brand logo image */
+.logo img.lg,.fb img.lg,.amlogo img.lg{width:auto!important;height:58px!important;border-radius:0!important;box-shadow:none!important;display:block}
+html body .wrap>header.top.top .logo{font-size:0;gap:0}
+.fb{display:inline-block;font-size:0}.fb img.lg{height:54px!important}
+html[data-theme=dark] img.lg{content:url(/img/dhankhoj-logo-dark.png)}
+@media(max-width:700px){.logo img.lg{height:40px!important}}
+.fb img.lg{content:url(/img/dhankhoj-logo-dark.png)}
