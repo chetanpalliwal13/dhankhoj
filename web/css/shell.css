@@ -464,3 +464,19 @@ html[data-theme=dark] .nh-c a,html[data-theme=dark] .pt-g a{border-color:#2B3C31
 .nh-l{margin-bottom:22px}
 @media(max-height:800px){.ns-r .tt{width:48px!important;height:48px!important}.ns-l{font-size:14.5px!important}.ns-v{font-size:26px!important}}
 .ns-l{font-size:15px!important}
+/* v6: summary panel like the supplied mockup */
+.nh .nh-g .nh-s{padding:14px 16px 0!important;gap:8px;background:linear-gradient(180deg,#fff,#F3FAF4)!important;position:relative;overflow:hidden}
+.nh .nh-g .nh-s::after{content:"";position:absolute;left:0;right:0;bottom:0;height:22%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 90' preserveAspectRatio='none'%3E%3Cpath d='M0 40Q100 10 200 40T400 30V90H0z' fill='%23CFEBD3'/%3E%3Cg fill='%23A9D8B1' opacity='.8'%3E%3Cpath d='M40 90V55l8-8 8 8v35zM150 90V50h5V38l7-8 7 8v12h5v40zM190 90V45a14 14 0 0 1 28 0v45zM300 90V52l9-9 9 9v38zM340 90V58h18v32z'/%3E%3C/g%3E%3Cpath d='M0 62Q120 40 220 64T400 58V90H0z' fill='%23B7E2BE' opacity='.9'/%3E%3C/svg%3E") center bottom/100% 100% no-repeat;pointer-events:none}
+.ns-h{display:flex;align-items:center;gap:12px;border:0!important;padding:0 0 4px!important}
+.ns-hi{width:46px;height:46px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(27,127,46,.15);display:grid;place-items:center;flex:none}
+.ns-h h2{flex:1;font:500 17px var(--hf)!important;color:#0B1F33}.ns-h h2 b{font-weight:800}
+.ns-h .tag{background:#E4F4E7;border:1px solid #BFE0C5;color:#13651F;border-radius:999px;padding:6px 12px;font-size:12px;white-space:nowrap}
+.ns-r{background:#fff;border-radius:16px;padding:0 18px 0 12px!important;border:0!important;box-shadow:0 1px 3px rgba(15,31,20,.06),0 6px 16px -10px rgba(15,31,20,.18);position:relative;z-index:1;flex:1 1 0;max-height:112px}
+.ns-r>div{flex:1}.ns-c{color:#1B3A24;flex:none}
+.ns-l{font:400 17px var(--hf)!important;color:#0B1F33!important}
+.ns-v{font:700 clamp(26px,2.2vw,34px) var(--hf)!important}
+.ns-r .tt{width:64px!important;height:64px!important;border-radius:50%!important}
+.nh .nh-g .nh-s{padding-bottom:22%!important}
+html[data-theme=dark] .ns-r{background:#16211A}html[data-theme=dark] .ns-l,html[data-theme=dark] .ns-h h2{color:#E4F2E8!important}html[data-theme=dark] .nh .nh-g .nh-s{background:linear-gradient(180deg,#121B15,#0F1913)!important}
+@media(max-height:800px){.ns-r .tt{width:50px!important;height:50px!important}.ns-l{font-size:14.5px!important}.ns-v{font-size:24px!important}.ns-hi{width:38px;height:38px}}
+.ns-h h2{font-size:15.5px!important}.ns-l{font-size:16px!important}.ns-h .tag{padding:5px 10px;font-size:11.5px}
