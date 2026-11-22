@@ -34,7 +34,7 @@ let _shell=false;
 function ensureShell(){const h=document.querySelector('header.top');if(!h||_shell)return;_shell=true;
   const nm=PAGES[location.pathname]||String(document.title||'').split(' - ')[0];
   if(location.pathname!=='/'&&location.pathname!=='/index.html')h.querySelector('.logo').insertAdjacentHTML('afterend','<span class="hsep" aria-hidden="true">/</span><span class="hpage">'+esc(nm)+'</span>');
-  h.insertAdjacentHTML('beforeend','<div class="hr" id="hr"></div>');
+  h.insertAdjacentHTML('beforeend','<div class="hs" id="hs" role="search"><input id="hsq" type="search" autocomplete="off" placeholder="Search stocks and dividends…" aria-label="Search a company or ticker" aria-controls="hsr" aria-expanded="false"><kbd class="hsk" aria-hidden="true">Ctrl K</kbd><div class="hsr hide" id="hsr" role="listbox"></div></div><div class="hr" id="hr"></div>');initSearch();
   document.addEventListener('click',e=>{
     if(e.target.closest('#tgl')){setTheme(curTheme()==='dark'?'light':'dark');return}
     const hb=e.target.closest('#hbm');if(hb){const o=document.body.classList.toggle('navopen');hb.setAttribute('aria-expanded',o?'true':'false');return}
@@ -57,13 +57,32 @@ async function buildNav(){ensureShell();const n=document.getElementById('nav'),r
 // ---- header: grouped dropdown menus on every page
 (function(){const n=document.getElementById('nav');if(!n)return;
  const dd=(t,items)=>'<div class="dd"><button type="button" class="ddb" aria-expanded="false">'+t+'</button><div class="ddp">'+items.map(i=>'<a href="'+i[0]+'">'+i[1]+'<small>'+i[2]+'</small></a>').join('')+'</div></div>';
- n.innerHTML=dd('Product',[['/dashboard.html','Dashboard','Search and track your dividends'],['/coverage.html','Coverage','Which companies we have checked'],['/upgrade.html','Pricing','Free and paid plans']])+
+ n.innerHTML=dd('Product',[['/dashboard.html','Dashboard','Search and track your dividends'],['/insights.html','Dividend insights','Rankings by yield, consistency and return'],['/coverage.html','Coverage','Which companies we have checked'],['/upgrade.html','Pricing','Free and paid plans']])+
   dd('Learn',[['/#how','How it works','The seven-year rule explained'],['/claim.html','How to claim','Step-by-step, free of charge'],['/#faq','Questions','Short answers']])+
   dd('Company',[['/about.html','About us','Who builds DhanKhoj'],['/contact.html','Contact &amp; support','Write to us'],['/stories.html','Customer stories','How others found their money'],['/feedback.html','Feedback','Tell us what to improve']])+'<a href="/upgrade.html">Pricing</a>';
  n.addEventListener('click',e=>{const b=e.target.closest('.ddb');document.querySelectorAll('.dd.open').forEach(d=>{if(!b||d!==b.parentElement)d.classList.remove('open')});if(b){const d=b.parentElement;d.classList.toggle('open');b.setAttribute('aria-expanded',d.classList.contains('open'))}});
  document.addEventListener('click',e=>{if(!e.target.closest('.dd'))document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'))});
  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'))});
  const sc=()=>document.body.classList.toggle('scrolled',scrollY>24);addEventListener('scroll',sc,{passive:true});sc()})();
+
+// ---- header search (sample companies) and the assistant launcher. Both load their code only when first used.
+function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795348239';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+let _dx=null;function loadDX(){return _dx||(_dx=loadJS('/js/divdata.js').then(()=>loadJS('/js/dxengine.js')).then(()=>window.dxLoad()))}
+function initSearch(){const q=document.getElementById('hsq'),box=document.getElementById('hsr');if(!q)return;let rows=[],sel=-1,list=[];
+  const close=()=>{box.classList.add('hide');q.setAttribute('aria-expanded','false');sel=-1};
+  const paint=()=>{const t=q.value.trim().toLowerCase();if(!t){close();return}
+    list=rows.filter(r=>r.name_l.indexOf(t)>=0).sort((a,b)=>(a.sym.toLowerCase().indexOf(t)===0?0:1)-(b.sym.toLowerCase().indexOf(t)===0?0:1)||a.name.localeCompare(b.name)).slice(0,7);
+    box.innerHTML=list.length?list.map((r,i)=>'<a role="option" href="/stock.html?sym='+r.sym+'" id="hso'+i+'"><b>'+esc(r.name)+'</b><small>'+r.sym+' · '+esc(r.sector)+' · yield '+r.yield.toFixed(2)+'%</small></a>').join('')+'<a class="hsall" href="/insights.html">Browse all rankings</a>':'<p>No company matches “'+esc(q.value.trim())+'”. Try the name or ticker, or <a href="/insights.html">browse rankings</a>.</p>';
+    box.classList.remove('hide');q.setAttribute('aria-expanded','true');sel=-1};
+  q.addEventListener('focus',()=>{loadDX().then(r=>{rows=r;paint()}).catch(()=>{})});
+  q.addEventListener('input',()=>{loadDX().then(r=>{rows=r;paint()})});
+  q.addEventListener('keydown',e=>{const a=box.querySelectorAll('a[role=option]');
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){if(!a.length)return;e.preventDefault();sel=(sel+(e.key==='ArrowDown'?1:-1)+a.length)%a.length;a.forEach((x,i)=>x.classList.toggle('on',i===sel));q.setAttribute('aria-activedescendant',a[sel].id)}
+    else if(e.key==='Enter'){const t=sel>=0?a[sel]:a[0];if(t){e.preventDefault();location.href=t.getAttribute('href')}}
+    else if(e.key==='Escape'){close();q.blur()}});
+  document.addEventListener('click',e=>{if(!e.target.closest('#hs'))close()});document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();q.focus();q.select()}})}
+window.dkAssistant=window.dkAssistant||{open:function(m){loadDX().then(()=>loadJS('/js/assistant.js')).then(()=>window.dkAssistant.open(m))}};
+(function(){if(document.getElementById('dka'))return;const b=document.createElement('button');b.type='button';b.id='dka';b.className='dka';b.setAttribute('aria-label','Ask the DhanKhoj assistant');b.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>Ask</span>';b.addEventListener('click',()=>window.dkAssistant.open());document.body.appendChild(b)})();
 buildNav();
 
 // ---- Sign in with Google: buttons stay hidden until the server says it is configured
