@@ -9,7 +9,7 @@ async function api(path,body){
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
     if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info')&&!path.startsWith('/api/testimonials')&&path!=='/api/auth/login')throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795340617';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795345696';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -117,3 +117,11 @@ window.stCards=function(list,max){const L=(max?list.slice(0,max):list);
  const one=s=>'<figure class="st">'+(s.sample?'<span class="pill warn">Sample - not a real customer</span>':'')+'<div class="stars-ro" aria-label="'+(s.rating||0)+' of 5">'+'&#9733;'.repeat(s.rating||0)+'<span class="off">'+'&#9733;'.repeat(5-(s.rating||0))+'</span></div><blockquote>'+esc(s.quote)+'</blockquote><figcaption><b>'+esc(s.name)+'</b>'+(s.city?', '+esc(s.city):'')+(s.recovered?' <span class="pill">Recovered '+esc(s.recovered)+'</span>':'')+'</figcaption></figure>';
  const html=L.map(one).join('');
  return L.length>=3?'<div class="stmq" role="region" aria-label="Customer stories"><div class="sttrack">'+html+'<span aria-hidden="true" class="stdup">'+html+'</span></div></div>':'<div class="stgrid">'+html+'</div>'};
+
+// ---- sign in / sign up popup (script loads the first time it is needed)
+const _CS=document.currentScript;let _amp=null;
+window.openAuth=function(mode,opts){if(!_amp)_amp=new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='/js/auth-modal.js'+((_CS&&_CS.src.split('?')[1])?'?'+_CS.src.split('?')[1]:'');sc.onload=ok;sc.onerror=no;document.head.appendChild(sc)});
+  return _amp.then(()=>window._openAuth(mode,opts))};
+document.addEventListener('click',e=>{if(e.defaultPrevented||e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+  const a=e.target.closest('a[href]');if(!a||a.target==='_blank')return;const m=/^\/(signin|signup)\.html(\?(.*))?$/.exec(a.getAttribute('href')||'');if(!m)return;
+  if(location.pathname==='/'+m[1]+'.html')return;e.preventDefault();const nx=new URLSearchParams(m[3]||'').get('next');openAuth(m[1],nx&&/^\/[A-Za-z0-9_\-.\/?=&%]*$/.test(nx)&&!nx.startsWith('//')?{next:nx}:{})});

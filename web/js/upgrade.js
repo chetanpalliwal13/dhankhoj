@@ -57,17 +57,10 @@ $('#bupi').addEventListener('click',async()=>{try{UPI=await api('/api/pay/upi/st
 $('#butr').addEventListener('click',async()=>{try{await api('/api/pay/upi/submit',{payment_id:UPI.payment_id,utr:$('#utr').value});done('Thank you - we received your reference and will activate your '+sel.label+' plan after matching it with our bank statement (usually a few working hours). You will get an email.')}catch(err){show(m,'err',err.message)}});
 
 // ---- sign-in pop-up: pricing stays public, sign-in is asked only when a plan is chosen
-const L=$('#lmod'),lm=$('#lmsg');
 function gnext(){return '/upgrade.html?plan='+(sel?sel.key:'')+'&period='+period+'&go=1'}
-function openLogin(){initGoogle(gnext());$('#lsel').textContent=sel?sel.label+' membership - '+(period==='yearly'?'yearly':'monthly')+', '+inr(priceOf(sel,period)):'';lm.classList.add('hide');L.classList.remove('hide');$('#lem').focus()}
-function closeLogin(){L.classList.add('hide')}
-$('#lclose').addEventListener('click',closeLogin);
-L.addEventListener('click',e=>{if(e.target===L)closeLogin()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLogin()});
-$('#lform').addEventListener('submit',async e=>{e.preventDefault();const b=$('#lgo');b.disabled=true;lm.classList.add('hide');
- try{const r=await api('/api/auth/login',{email:$('#lem').value,password:$('#lpw').value});
-  ME.user=r.user;ME.loaded=true;USER=r.user;$('#lpw').value='';PLAN=await api('/api/plan');closeLogin();buildNav();cards();checkout();if(USER.email_verified&&PLAN.gateway)pay()}
- catch(err){show(lm,'err',err.message)}finally{b.disabled=false}});
+// sign in (or create an account) in a popup, then go straight on to payment
+function openLogin(mode){openAuth(mode||'signin',{next:gnext(),note:sel?sel.label+' membership - '+(period==='yearly'?'yearly':'monthly')+', '+inr(priceOf(sel,period)):'',
+ onSuccess:async user=>{ME.user=user;ME.loaded=true;USER=user;PLAN=await api('/api/plan');buildNav();cards();checkout();if(USER.email_verified&&PLAN.gateway)pay()}})}
 
 // plan clicked: look at the live session first (it may have changed in another tab), then sign in or go straight to payment
 async function go(){ME.loaded=false;USER=await session();cards();if(!USER){openLogin();return}

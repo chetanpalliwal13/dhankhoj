@@ -103,3 +103,43 @@ html[data-theme=dark] .stats b,html[data-theme=dark] .dstats b{color:#6FDDB5}
 @media(max-width:480px){html body .wrap>header.top.top{padding:0 12px!important}html body .wrap>header.top.top .logo{font-size:17px;gap:6px}html body .wrap>header.top.top .logo img{width:26px;height:26px}}
 .hbm{background:transparent}
 @media(max-width:980px){html body .wrap>header.top.top #nav .ddp a{display:block!important;margin:0}}
+
+/* ===== sign in / sign up popup ===== */
+body.amopen{overflow:hidden}
+.am{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:16px;background:rgba(9,18,32,.56);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.am.hide{display:none}
+.am .amb{position:relative;width:min(468px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--card,#fff);color:var(--ink);border-radius:22px;padding:26px 28px 24px;box-shadow:0 40px 90px -30px rgba(0,0,0,.6);border:1px solid var(--line)}
+.am .amlogo{display:flex;align-items:center;gap:10px;margin:0 0 18px}.am .amlogo b{font:400 21px "Archivo Black","DM Sans",sans-serif;color:var(--ink)}
+.am .amx{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:50%;border:0;background:transparent!important;color:var(--mut)!important;display:grid;place-items:center;padding:0;margin:0;cursor:pointer;box-shadow:none}
+.am .amx:hover{background:var(--soft)!important;color:var(--ink)!important;transform:none}.am .amx svg{width:20px;height:20px}
+.am h2{font:800 27px/1.15 "DM Sans",sans-serif;letter-spacing:-.02em;margin:4px 0 6px;color:var(--ink)}
+.am .amsub{margin:0 0 16px;color:var(--mut);font-size:15px;line-height:1.5}
+.am .amnote{margin:0 0 14px;padding:10px 12px;border-radius:12px;background:#FFF4DC;color:#5A3B00;font-size:14px}
+html[data-theme=dark] .am .amnote{background:rgba(245,154,27,.14);color:#F4D9A6}
+.am .amtabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--soft);border:1px solid var(--line);margin:2px 0 16px}
+.am .amtabs button{height:42px;border-radius:11px;border:0;background:transparent!important;color:var(--mut)!important;font:700 15px "DM Sans",sans-serif;padding:0;margin:0;cursor:pointer;box-shadow:none;transform:none}
+.am .amtabs button.on{background:var(--card,#fff)!important;color:var(--ink)!important;box-shadow:0 1px 3px rgba(0,0,0,.18),0 0 0 1px var(--line)}
+.am .amg{width:100%;height:50px;display:flex;align-items:center;justify-content:center;gap:10px;border-radius:12px;border:1px solid var(--line)!important;background:var(--card,#fff)!important;color:var(--ink)!important;font:600 16px "DM Sans",sans-serif;padding:0;margin:0;cursor:pointer;box-shadow:none;transform:none}
+.am .amg:hover{background:var(--soft)!important}
+.am .amor{display:flex;align-items:center;gap:12px;margin:16px 0 4px;color:var(--mut);font-size:13.5px}.am .amor::before,.am .amor::after{content:"";flex:1;height:1px;background:var(--line)}
+.am form{margin:0}.am label{display:block;font:700 14px "DM Sans",sans-serif;margin:14px 0 6px;color:var(--ink)}
+.am .fld{position:relative}.am .fld>svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:19px;height:19px;color:#7A8782;pointer-events:none}
+.am .fld input{width:100%;height:50px;margin:0;padding:0 14px 0 44px;border:1px solid var(--line);border-radius:12px;background:var(--card,#fff);color:var(--ink);font:500 16px "DM Sans",sans-serif;box-shadow:none}
+.am .fld input:focus{outline:0;border-color:var(--g);box-shadow:0 0 0 3px rgba(8,122,91,.18)}
+.am .fld .pwwrap input{padding-right:48px}
+html[data-theme=dark] .am .fld input{background:#0F1319}
+.am .amgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.am .amhint{margin:8px 0 0;font-size:13px;color:var(--mut);line-height:1.45}
+.am .amrow{text-align:right;margin:10px 0 2px;font-size:14px}.am .amrow a{font-weight:600}
+.am .amchk{display:flex;gap:10px;align-items:flex-start;margin:16px 0 4px;font:400 14px/1.45 "DM Sans",sans-serif;color:var(--mut)}.am .amchk input{width:18px;height:18px;margin:2px 0 0;flex:none;accent-color:var(--g)}
+.am .amgo{width:100%;height:52px;border-radius:12px;border:0;background:var(--g)!important;color:#fff!important;font:800 16px "DM Sans",sans-serif;margin:18px 0 0;padding:0;cursor:pointer;box-shadow:0 10px 22px -12px rgba(8,122,91,.9)}
+.am .amgo:hover{background:#0A9A72!important}.am .amgo:disabled{opacity:.6;cursor:wait}
+.am .amalt{margin:16px 0 0;text-align:center;color:var(--mut);font-size:14.5px}
+.am .amlink{background:none!important;border:0;color:var(--g)!important;font:700 14.5px "DM Sans",sans-serif;padding:0;margin:0;cursor:pointer;box-shadow:none;transform:none;text-decoration:underline;text-underline-offset:3px}
+html[data-theme=dark] .am .amlink,html[data-theme=dark] .am .amrow a{color:#5BD6AC!important}
+.am .amok{width:60px;height:60px;border-radius:50%;background:#E3F6EF;color:var(--g);display:grid;place-items:center;margin:6px 0 14px}.am .amok svg{width:30px;height:30px}
+.am .msg{margin:12px 0 0}
+.am a:focus-visible,.am button:focus-visible,.am input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+@media(max-width:480px){.am{padding:0;align-items:end}.am .amb{border-radius:22px 22px 0 0;max-height:94vh;padding:22px 18px 20px;width:100%}.am .amgrid{grid-template-columns:1fr}}
+.authbg{min-height:60vh}
+.am .fld>svg{z-index:2}.am .fld .pwwrap input{padding-right:44px}.am .amgrid .fld input{padding-left:42px}.am .amgrid .fld>svg{left:12px}
