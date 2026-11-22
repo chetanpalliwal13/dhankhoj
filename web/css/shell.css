@@ -342,3 +342,13 @@ html[data-theme=dark] .hform{background:var(--card);border-color:var(--line);box
 .appmain>h1#at{font:700 22px var(--hf);margin:6px 0 14px}.side hr{border:0;border-top:1px solid var(--line);margin:10px 4px}
 .appmain #main{background:none!important;padding:0!important;border:0!important;box-shadow:none!important}
 .ab-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.ab-note{margin:16px 0 0;color:var(--mut);max-width:760px}.ab-list{margin:0;padding-left:20px;display:grid;gap:10px}@media(max-width:800px){.ab-2{grid-template-columns:1fr}}
+/* hero artwork */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hero-img{position:relative;max-width:1180px;margin:0 auto 22px;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 18px 40px -26px rgba(15,31,20,.35);line-height:0}
+.hero-img img{display:block;width:100%;height:auto}
+.hero-btn{position:absolute;left:4.43%;top:71.58%;width:20.96%;height:6.54%;border-radius:6px;background:transparent;transition:background .15s}
+.hero-btn:hover{background:rgba(255,255,255,.1)}.hero-btn:focus-visible{outline:3px solid #0B3D91;outline-offset:2px}
+.hf-h{margin:0 0 4px;font-size:22px}.hf-p{margin:0 0 12px}
+.nh{padding-top:22px!important}.nh-g{max-width:1180px;margin:0 auto}
+html[data-theme=dark] .hero-img{border-color:var(--line)}
+.hero-img{margin-top:20px}
