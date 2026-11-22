@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DhanKhoj - Find your unclaimed dividends before the 7-year clock runs out</title>
 <meta name="description" content="Free account with alerts by email, SMS and WhatsApp when your name appears in a company's unpaid / unclaimed dividend list.">
-<link rel="icon" href="/favicon.svg"><script src="/js/theme-init.js"></script><link rel="stylesheet" href="/css/site.css?v=1795345696"><link rel="stylesheet" href="/css/theme.css?v=1795345696"><link rel="stylesheet" href="/css/shell.css?v=1795345714"></head><body class="hp">
+<link rel="icon" href="/favicon.svg"><script src="/js/theme-init.js"></script><link rel="stylesheet" href="/css/site.css?v=1795345876"><link rel="stylesheet" href="/css/theme.css?v=1795345876"><link rel="stylesheet" href="/css/shell.css?v=1795345895"></head><body class="hp">
 <div class="annc">Checking is free, and your PAN is stored encrypted. <a href="/claim.html">How claiming works</a></div>
 <div class="hero-wrap"><div class="wrap">
 <header class="top"><a class="logo" href="/"><img src="/favicon.svg" width="32" height="32" alt="">DhanKhoj</a><nav id="nav"></nav></header>
@@ -76,6 +76,25 @@
 <div><b>2</b><h3>We match you</h3><p>PAN, demat and folio IDs, spelling variants and PIN code are compared. Only strong matches trigger an alert.</p></div>
 <div><b>3</b><h3>You get reminded</h3><p>By email, SMS or WhatsApp when a match appears, and again as your estimated deadline gets close.</p></div></div></div></section>
 
+<section id="dx"><div class="wrap"><div class="sec-h"><span class="kick">Dividend explorer</span><h2>Find the stocks that pay you back.</h2><p>Filter by yield, how long a company has paid, payout ratio and more. See who pays next.</p></div>
+<div class="dxsample" role="note"><b>Sample data.</b> These companies and numbers are made up so you can try the filters. Live market data is coming soon.</div>
+<div class="dxtop"><div class="dxcard"><h3>Next ex-dividend dates</h3><ul id="dx-up"></ul></div><div class="dxcard"><h3>Highest dividend yield</h3><ul id="dx-top"></ul></div><div class="dxcard"><h3>Longest payment streaks</h3><ul id="dx-str"></ul></div></div>
+<div class="dxt" role="tablist" aria-label="Quick views"><button type="button" data-t="all">All stocks</button><button type="button" data-t="high">High yield 3%+</button><button type="button" data-t="steady">Paid 10+ years</button><button type="button" data-t="growth">Dividend growth 10%+</button><button type="button" data-t="soon">Ex-date in 30 days</button></div>
+<div class="dxf"><div><label for="dx-q">Search</label><input id="dx-q" type="search" placeholder="Name or ticker" autocomplete="off"></div>
+<div><label for="dx-sector">Sector</label><select id="dx-sector"></select></div>
+<div><label for="dx-cap">Company size</label><select id="dx-cap"><option value="">Any</option><option>Large</option><option>Mid</option><option>Small</option></select></div>
+<div><label for="dx-yield">Dividend yield</label><select id="dx-yield"><option value="">Any</option><option value="1">1% or more</option><option value="2">2% or more</option><option value="3">3% or more</option><option value="5">5% or more</option></select></div>
+<div><label for="dx-years">Years paid in a row</label><select id="dx-years"><option value="">Any</option><option value="3">3+ years</option><option value="5">5+ years</option><option value="10">10+ years</option><option value="15">15+ years</option></select></div>
+<div><label for="dx-pay">Payout ratio</label><select id="dx-pay"><option value="">Any</option><option value="40">40% or less</option><option value="60">60% or less</option><option value="80">80% or less</option></select></div>
+<div><label for="dx-cagr">5-year dividend growth</label><select id="dx-cagr"><option value="">Any</option><option value="5">5% or more</option><option value="10">10% or more</option><option value="15">15% or more</option></select></div>
+<div><label for="dx-freq">How often</label><select id="dx-freq"><option value="">Any</option><option>Annual</option><option>Half-yearly</option><option>Quarterly</option></select></div>
+<div><label for="dx-ex">Next ex-date</label><select id="dx-ex"><option value="">Any time</option><option value="15">Within 15 days</option><option value="30">Within 30 days</option><option value="60">Within 60 days</option></select></div>
+<div class="dxr"><button type="button" class="ghost" id="dx-reset">Reset filters</button></div></div>
+<div class="dxbar"><span id="dx-count" aria-live="polite"></span><span class="mut">Select a column heading to sort</span></div>
+<div class="dxwrap"><table class="dxtab"><thead><tr><th data-k="name" scope="col" tabindex="0">Company</th><th data-k="price" scope="col">Price</th><th data-k="dps" scope="col">Dividend / year</th><th data-k="yield" scope="col">Yield</th><th data-k="payout" scope="col">Payout</th><th data-k="years" scope="col">Paid for</th><th data-k="cagr" scope="col">5Y growth</th><th data-k="freq" scope="col">How often</th><th data-k="exIn" scope="col">Next ex-date</th></tr></thead><tbody id="dx-body"></tbody></table></div>
+<p class="dxmore"><button type="button" class="ghost hide" id="dx-more">Show 10 more</button></p>
+<p class="mut dxfoot">Dividend yield = yearly dividend per share divided by share price. Ex-date is the last day to buy and still get the next dividend. This is information, not investment advice.</p></div></section>
+
 <section id="stories"><div class="wrap"><div class="sec-h"><h2>Your Money. Your Right. Don't Leave It Behind.</h2><p class="lead">Every forgotten dividend has a story. Some belong to investments made years ago, some to family portfolios, and some to shares people no longer remember owning.</p><p class="lead"><b>DhanKhoj helps you discover what may rightfully belong to you.</b></p></div><div class="stgrid"></div><p id="stmore" class="hide"><a href="/stories.html">Read customer stories</a></p><p><a class="btn" href="/signup.html">Check my name free</a></p></div></section>
 
 <section id="subscribe"><div class="wrap"><div class="plans-band">
@@ -95,4 +114,4 @@
 </div></div></section>
 
 <div class="wrap"><div class="endcta"><h2>Your name could be on a list right now.</h2><p>Check it free in a minute. No card needed.</p><a class="btn gold" href="/signup.html">Create free account</a><a class="btn ghost" href="#check">Check my name</a></div></div>
-<script src="/js/common.js?v=1795345696"></script><script src="/js/app.js?v=1795345696"></script><script src="/js/stories-home.js?v=1795345696"></script></body></html>
+<script src="/js/common.js?v=1795345696"></script><script src="/js/app.js?v=1795345696"></script><script src="/js/divdata.js?v=1"></script><script src="/js/explore.js?v=1"></script><script src="/js/stories-home.js?v=1795345696"></script></body></html>
