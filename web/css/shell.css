@@ -323,3 +323,16 @@ html[data-theme=dark] .side a.on,html[data-theme=dark] .side a.on *{color:#06140
 .pf-bar{display:grid;grid-template-columns:130px 1fr auto;gap:12px;align-items:center;margin:10px 0}.pf-bar>div{height:10px;background:var(--soft);border-radius:6px;overflow:hidden}.pf-bar i{display:block;height:100%}
 .side hr{border:0;border-top:1px solid var(--line);margin:10px 4px}
 @media(max-width:1100px){.pf-g{grid-template-columns:1fr}.pf-st{grid-template-columns:1fr 1fr}.pf-bar{grid-template-columns:1fr}}
+/* hero: the dividend finder leads */
+.hform{display:grid;grid-template-columns:1.4fr .8fr 1fr auto;gap:10px;align-items:end;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:6px 0 8px;box-shadow:0 6px 22px -12px rgba(15,31,20,.2)}
+.hform label{display:block;font-size:12.5px;font-weight:600;margin-bottom:4px}.hform label small{font-weight:400;color:var(--mut)}.hform input{width:100%;margin:0}.hform button{margin:0;height:44px;white-space:nowrap}
+.hnote{margin:0 0 14px;font-size:13px}
+html[data-theme=dark] .hform{background:var(--card);border-color:var(--line);box-shadow:none}
+.nh-more a{padding:12px 14px}.nh-more b{font-size:14.5px}
+.sbar{padding:22px 0;text-align:center}.sbar h2{font-size:17px}
+@media(max-width:1180px){.hform{grid-template-columns:1fr 1fr}.hform button{grid-column:1/-1}}
+@media(max-width:700px){.hform{grid-template-columns:1fr}}
+.sbar{margin:0!important;background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important}
+.nh-g{grid-template-columns:minmax(0,1.5fr) 300px!important}.nh-m{display:none!important}
+.hs{flex:0 1 190px;min-width:150px}.hform input{min-width:0}
+@media(max-width:1180px){.nh-g{grid-template-columns:1fr!important}}
