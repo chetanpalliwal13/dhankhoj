@@ -33,7 +33,7 @@ function setTheme(t){document.documentElement.setAttribute('data-theme',t);try{l
 let _shell=false;
 function ensureShell(){const h=document.querySelector('header.top');if(!h||_shell)return;_shell=true;
   const nm=PAGES[location.pathname]||String(document.title||'').split(' - ')[0];
-  h.querySelector('.logo').insertAdjacentHTML('afterend','<span class="hsep" aria-hidden="true">/</span><span class="hpage">'+esc(nm)+'</span>');
+  if(location.pathname!=='/'&&location.pathname!=='/index.html')h.querySelector('.logo').insertAdjacentHTML('afterend','<span class="hsep" aria-hidden="true">/</span><span class="hpage">'+esc(nm)+'</span>');
   h.insertAdjacentHTML('beforeend','<div class="hr" id="hr"></div>');
   document.addEventListener('click',e=>{
     if(e.target.closest('#tgl')){setTheme(curTheme()==='dark'?'light':'dark');return}
