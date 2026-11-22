@@ -28,7 +28,7 @@ def label(st, key, period=None):
 
 
 def features(t, st):
-    f = ['%s companies shown in full' % ('Every matched company, no limit' if t['companies'] is None else 'Up to %d' % t['companies']),
+    f = ['Unlimited companies shown in full' if t['companies'] is None else 'Up to %d companies shown in full' % t['companies'],
          'Email %s alerts' % ('+ SMS + WhatsApp' if t['whatsapp'] else '+ SMS'),
          'Up to %d demat / folio IDs plus PAN matching' % st.max_dp_ids, 'Deadline reminders before IEPF transfer', 'GST receipts for every payment']
     return f
