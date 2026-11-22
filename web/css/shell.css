@@ -452,3 +452,15 @@ html[data-theme=dark] .nh-c a,html[data-theme=dark] .pt-g a{border-color:#2B3C31
 .nh .nh-g .nh-l .hform{grid-row:1/3}
 .nh .nh-g .nh-l .hform input{height:40px}
 @media(max-width:1100px){.nh .nh-g .nh-l .hf-h{grid-row:auto}.nh .nh-g .nh-l .hform{grid-row:auto}}
+/* v5: stats panel typography/spacing matched to the artwork; even gaps */
+.nh .nh-g{gap:16px!important}
+.nh .nh-g .nh-s{padding:18px 26px 8px!important;display:flex;flex-direction:column}
+.ns-h{padding-bottom:12px;border-bottom:1px solid var(--line)}.ns-h h2{font:700 20px var(--hf);letter-spacing:-.01em;color:#0B1F33}
+.ns-r{align-items:center!important;gap:18px!important;padding:0!important;flex:1 1 0}
+.ns-r .tt{width:60px!important;height:60px!important;border-radius:18px!important}
+.ns-r .tt svg{width:30px;height:30px}
+.ns-l{font:600 16px var(--hf)!important;color:#13651F!important;letter-spacing:0}
+.ns-v{font:800 clamp(26px,2.3vw,36px) var(--hf)!important;letter-spacing:-.02em!important;line-height:1.1!important;margin-top:4px!important}
+.nh-l{margin-bottom:22px}
+@media(max-height:800px){.ns-r .tt{width:48px!important;height:48px!important}.ns-l{font-size:14.5px!important}.ns-v{font-size:26px!important}}
+.ns-l{font-size:15px!important}
