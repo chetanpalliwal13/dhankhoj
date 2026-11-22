@@ -382,3 +382,22 @@ html[data-theme=dark] .hero-img{border-color:var(--line)}
 .tt.t1{background:#E3F4E7}.tt.t2{background:#E4F0FD}.tt.t3{background:#FFF1DA}.tt.t4{background:#F0E8FB}.tt.t5{background:#E3F4E7}.tt.t6{background:#E2F5F2}
 html[data-theme=dark] .tt{background:#fff}
 @media(max-height:760px){.nh-g .nh-t small{display:none!important}}
+/* v3 first screen: big artwork on the left; Popular Tools and Check your name stacked on the right; all in one view */
+.nh .nh-g{--rw:380px;--iw:min(1180px,calc(100vw - var(--rw) - 80px),calc(var(--avail) * 1.5));grid-template-columns:var(--iw) var(--rw)!important;grid-template-rows:1fr auto!important;gap:14px!important;align-items:stretch!important}
+.nh .nh-g .hero-img{grid-column:1!important;grid-row:1/3!important;align-self:start}
+.nh .nh-g .nh-t{grid-column:2!important;grid-row:1!important;padding:14px 18px 6px;justify-content:flex-start}
+.nh .nh-g .nh-l{grid-column:2!important;grid-row:2!important;background:var(--card,#fff);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(15,31,20,.04),0 6px 18px -10px rgba(15,31,20,.12)}
+html[data-theme=dark] .nh .nh-g .nh-l{background:var(--card);border-color:var(--line)}
+.nh .nh-g .nh-t h2{font-size:17px;margin:0 0 2px}
+.nh .nh-g .nh-t a{padding:7px 0!important;gap:12px}.nh .nh-g .tt{width:42px;height:42px;border-radius:12px}.nh .nh-g .tt svg{width:24px;height:24px}
+.nh .nh-g .nh-t b{font-size:14.5px}.nh .nh-g .nh-t small{font-size:12px;margin-top:1px}
+.nh .nh-g .hf-h{font-size:16px}.nh .nh-g .hf-p{font-size:12.5px;margin:0 0 8px}
+.nh .nh-g .hform{grid-template-columns:1fr 1fr;border:0;box-shadow:none;padding:0;background:none}
+.nh .nh-g .hform>div:first-child{grid-column:1/-1}.nh .nh-g .hform button{grid-column:1/-1;height:40px}
+.nh .nh-g .hnote{font-size:11.5px;margin:6px 0 0}
+@media(max-height:780px){.nh .nh-g .nh-t small{display:none!important}.nh .nh-g .nh-t a{padding:6px 0!important}}
+@media(max-width:980px){.nh .nh-g{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto!important}.nh .nh-g .hero-img,.nh .nh-g .nh-t,.nh .nh-g .nh-l{grid-column:1!important;grid-row:auto!important}.nh .nh-g .nh-l{order:2}.nh .nh-g .nh-t{order:3}}
+.nh .nh-g .hf-p{display:none}.nh .nh-g .nh-l{padding:12px 16px}.nh .nh-g .hform label{margin-bottom:3px;font-size:12px}.nh .nh-g .hform input{height:36px}.nh .nh-g .hform{gap:7px 10px}.nh .nh-g .hform button{height:38px}.nh .nh-g .hnote{margin:5px 0 0;line-height:1.3}
+@media(max-height:800px){.nh .nh-g .nh-t small{display:none!important}}
+@media(min-height:801px){.nh .nh-g .nh-t small{display:block!important}}
+@media(max-height:760px){.nh .nh-g .hnote{display:none}.nh .nh-g .nh-t a{padding:4px 0!important}.nh .nh-g .tt{width:36px;height:36px}.nh .nh-g .hform input{height:34px}}
