@@ -9,7 +9,7 @@ async function api(path,body){
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
     if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info')&&!path.startsWith('/api/testimonials')&&path!=='/api/auth/login')throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795345696';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795351002';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -47,9 +47,9 @@ function ensureShell(){const h=document.querySelector('header.top');if(!h||_shel
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('acm'),b=document.getElementById('acb');if(m&&!m.classList.contains('hide')){m.classList.add('hide');b.setAttribute('aria-expanded','false');b.focus()}document.body.classList.remove('navopen')}})}
 async function buildNav(){ensureShell();const n=document.getElementById('nav'),r=document.getElementById('hr');if(!n||!r)return;const u=await session();
   n.querySelectorAll('.keep,.dsh').forEach(a=>a.remove());
-  if(u){const co=[...n.querySelectorAll('.dd')].find(d=>/^Company/.test(d.textContent));if(co)co.outerHTML='<div class="dd"><button type="button" class="ddb" aria-expanded="false">Help</button><div class="ddp"><a href="/contact.html">Contact &amp; support<small>Write to us</small></a><a href="/claim.html">How to claim<small>Step-by-step, free of charge</small></a><a href="/feedback.html">Feedback<small>Tell us what to improve</small></a></div></div>'}
+  if(u){const h=n.querySelector(':scope>a');if(h&&h.getAttribute('href')==='/'){h.textContent='Dashboard';h.setAttribute('href','/dashboard.html');h.classList.toggle('cur',location.pathname==='/dashboard.html')}const dv=[...n.querySelectorAll('.dd')].find(d=>/^Dividends/.test(d.textContent));if(dv)dv.remove();const lp=[...n.querySelectorAll('.dd')].find(d=>/^Learn/.test(d.textContent));if(lp)lp.querySelector('.ddp').insertAdjacentHTML('afterbegin','<a href="/insights.html">Dividend insights<small>Rankings by yield and return</small></a><a href="/coverage.html">Coverage<small>Which companies we have checked</small></a><a href="/upgrade.html">Pricing<small>Free and paid plans</small></a>')}
   const t=curTheme(),th='<button type="button" class="tgl" id="tgl" aria-label="'+(t==='dark'?'Switch to light theme':'Switch to dark theme')+'">'+I_SUN+I_MOON+'</button>',hb='<button type="button" class="hbm" id="hbm" aria-label="Menu" aria-expanded="false">'+I_MENU+'</button>';
-  if(!u){r.innerHTML=th+'<a class="hsi" href="/signin.html">Sign in</a><a class="hsu" href="/signup.html">Sign up free</a>'+hb;return}
+  if(!u){r.innerHTML=th+'<a class="hsi" href="/signin.html">Login</a><a class="hsu" href="/signup.html">Sign Up</a>'+hb;return}
   const pn=u.plan&&u.plan.active?'<span class="pill">'+esc(u.plan.label)+' plan</span>':'<span class="pill">Free plan</span>';
   r.innerHTML=th+'<div class="acct"><button type="button" class="achip" id="acb" aria-haspopup="true" aria-expanded="false" aria-label="Account menu"><span class="uav" aria-hidden="true">'+esc(initials(u.name))+'</span>'+I_CHEV+'</button>'+
     '<div class="amenu hide" id="acm" role="menu"><div class="umh"><span class="uav" aria-hidden="true">'+esc(initials(u.name))+'</span><div><b>'+esc(u.name)+'</b><small>'+esc(u.email)+'</small>'+pn+'</div></div>'+
@@ -57,16 +57,16 @@ async function buildNav(){ensureShell();const n=document.getElementById('nav'),r
 // ---- header: grouped dropdown menus on every page
 (function(){const n=document.getElementById('nav');if(!n)return;
  const dd=(t,items)=>'<div class="dd"><button type="button" class="ddb" aria-expanded="false">'+t+'</button><div class="ddp">'+items.map(i=>'<a href="'+i[0]+'">'+i[1]+'<small>'+i[2]+'</small></a>').join('')+'</div></div>';
- n.innerHTML=dd('Product',[['/dashboard.html','Dashboard','Search and track your dividends'],['/insights.html','Dividend insights','Rankings by yield, consistency and return'],['/coverage.html','Coverage','Which companies we have checked']])+
-  dd('Learn',[['/#how','How it works','The seven-year rule explained'],['/claim.html','How to claim','Step-by-step, free of charge'],['/#faq','Questions','Short answers']])+
-  dd('Company',[['/about.html','About us','Who builds DhanKhoj'],['/contact.html','Contact &amp; support','Write to us'],['/stories.html','Customer stories','How others found their money'],['/feedback.html','Feedback','Tell us what to improve']])+'<a href="/upgrade.html">Pricing</a>';
+ n.innerHTML='<a href="/">Home</a>'+dd('Dividends',[['/dashboard.html','Dashboard','Search and track your dividends'],['/insights.html','Dividend insights','Rankings by yield, consistency and return'],['/coverage.html','Coverage','Which companies we have checked'],['/upgrade.html','Pricing','Free and paid plans']])+'<a href="/explore.html?t=mf">Mutual Funds</a><a href="/insights.html">Stocks</a><a href="/explore.html?t=fd">FD</a><a href="/explore.html?t=nps">NPS</a><a href="/calculators.html">Calculators</a><a href="/explore.html?t=blog">Blog</a>'+
+  dd('Learn',[['/#how','How it works','The seven-year rule explained'],['/claim.html','How to claim','Step-by-step, free of charge'],['/stories.html','Customer stories','How others found their money'],['/about.html','About us','Who builds DhanKhoj'],['/contact.html','Contact &amp; support','Write to us'],['/#faq','Questions','Short answers']]);
+ n.querySelectorAll(':scope>a').forEach(a=>{const h=a.getAttribute('href').split('#')[0],ph=location.pathname+location.search;if((h==='/'&&location.pathname==='/')||(h!=='/'&&(h===ph||h===location.pathname)))a.classList.add('cur')});
  n.addEventListener('click',e=>{const b=e.target.closest('.ddb');document.querySelectorAll('.dd.open').forEach(d=>{if(!b||d!==b.parentElement)d.classList.remove('open')});if(b){const d=b.parentElement;d.classList.toggle('open');b.setAttribute('aria-expanded',d.classList.contains('open'))}});
  document.addEventListener('click',e=>{if(!e.target.closest('.dd'))document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'))});
  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'))});
  const sc=()=>document.body.classList.toggle('scrolled',scrollY>24);addEventListener('scroll',sc,{passive:true});sc()})();
 
 // ---- header search (sample companies) and the assistant launcher. Both load their code only when first used.
-function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795350242';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795351002';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
 let _dx=null;function loadDX(){return _dx||(_dx=loadJS('/js/divdata.js').then(()=>loadJS('/js/dxengine.js')).then(()=>window.dxLoad()))}
 function initSearch(){const q=document.getElementById('hsq'),box=document.getElementById('hsr');if(!q)return;let rows=[],sel=-1,list=[];
   const close=()=>{box.classList.add('hide');q.setAttribute('aria-expanded','false');sel=-1};

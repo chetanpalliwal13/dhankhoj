@@ -1,0 +1,12 @@
+(()=>{const CALC={
+sip:{t:'SIP Calculator',f:[['amt','Monthly investment (₹)',10000],['rate','Expected return (% a year)',12],['yrs','Years',10]],run:v=>{const r=v.rate/1200,n=v.yrs*12,fv=r?v.amt*((Math.pow(1+r,n)-1)/r)*(1+r):v.amt*n,inv=v.amt*n;return[['Invested',inv],['Estimated returns',fv-inv],['Total value',fv]]}},
+lump:{t:'Lumpsum Calculator',f:[['amt','Amount invested (₹)',100000],['rate','Expected return (% a year)',12],['yrs','Years',10]],run:v=>{const fv=v.amt*Math.pow(1+v.rate/100,v.yrs);return[['Invested',v.amt],['Estimated returns',fv-v.amt],['Total value',fv]]}},
+fd:{t:'FD Rate Tracker',f:[['amt','Deposit (₹)',100000],['rate','Interest rate (% a year)',7],['yrs','Years',5]],run:v=>{const fv=v.amt*Math.pow(1+v.rate/400,4*v.yrs);return[['Deposit',v.amt],['Interest earned (quarterly compounding)',fv-v.amt],['Maturity value',fv]]}},
+ret:{t:'Retirement Calculator',f:[['age','Your age now',30],['ret','Retirement age',60],['exp','Monthly expense today (₹)',50000],['inf','Inflation (% a year)',6],['life','Years you need money after retiring',25]],run:v=>{const y=Math.max(0,v.ret-v.age),e=v.exp*Math.pow(1+v.inf/100,y)*12;return[['Monthly expense at retirement',e/12],['Yearly expense at retirement',e],['Corpus needed (no returns assumed)',e*v.life]]}}};
+const F=n=>'₹'+Math.round(n).toLocaleString('en-IN');let cur=new URLSearchParams(location.search).get('c');if(!CALC[cur])cur='sip';
+const tabs=document.getElementById('ctabs'),form=document.getElementById('cf'),out=document.getElementById('cr');
+function draw(){tabs.innerHTML=Object.keys(CALC).map(k=>'<button type="button" role="tab" class="ctab'+(k===cur?' on':'')+'" data-k="'+k+'" aria-selected="'+(k===cur)+'">'+CALC[k].t+'</button>').join('');
+ form.innerHTML=CALC[cur].f.map(f=>'<label>'+f[1]+'<input type="number" min="0" step="any" name="'+f[0]+'" value="'+f[2]+'"></label>').join('');calc()}
+function calc(){const v={};CALC[cur].f.forEach(f=>{v[f[0]]=Math.max(0,parseFloat(form.elements[f[0]].value)||0)});const r=CALC[cur].run(v);
+ out.innerHTML=r.map((x,i)=>'<div class="'+(i===r.length-1?'big':'')+'"><span>'+x[0]+'</span><b>'+F(x[1])+'</b></div>').join('')+'<p class="mut">Estimate based on the numbers above. Real returns vary and are not guaranteed.</p>'}
+tabs.addEventListener('click',e=>{const b=e.target.closest('.ctab');if(b){cur=b.dataset.k;history.replaceState(null,'','?c='+cur);draw()}});form.addEventListener('input',calc);form.addEventListener('submit',e=>e.preventDefault());draw()})();
