@@ -370,5 +370,15 @@ html[data-theme=dark] .hero-img{border-color:var(--line)}
 @media(max-height:820px){.nh-t a small{display:none}.nh-t a{padding:8px 0}}
 @media(max-width:980px){.nh-g{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto}.nh-g .hero-img,.nh-g .nh-l,.nh-g .nh-t{grid-column:1;grid-row:auto}}
 .nh-g{--iw:min(900px,calc(100vw - 400px),calc((var(--avail) - 235px)*1.5))}
-@media(max-height:1000px){.nh-t a small{display:none}.nh-t a{padding:9px 0}}
+
 .nh-g .nh-t{overflow:hidden}
+/* Popular Tools: roomier rows with a small illustrated tile for each tool */
+.nh-g .nh-t{padding:20px 20px 12px;justify-content:flex-start;overflow:visible}
+.nh-g .nh-t h2{font-size:18px;margin:0 0 6px}
+.nh-g .nh-t a{display:flex!important;align-items:center;gap:14px;flex:1;padding:10px 0!important;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.nh-g .nh-t a:last-child{border-bottom:0}.nh-g .nh-t a div{flex:1;min-width:0}.nh-g .nh-t b{display:block;font-size:15px}.nh-g .nh-t small{display:block!important;color:var(--mut);font-size:12.5px;margin-top:2px;line-height:1.35}
+.nh-g .nh-t i{font-style:normal;color:var(--g);opacity:.6;transition:transform .15s}.nh-g .nh-t a:hover i{transform:translateX(3px);opacity:1}
+.tt{flex:none;width:52px;height:52px;border-radius:14px;display:grid;place-items:center}
+.tt.t1{background:#E3F4E7}.tt.t2{background:#E4F0FD}.tt.t3{background:#FFF1DA}.tt.t4{background:#F0E8FB}.tt.t5{background:#E3F4E7}.tt.t6{background:#E2F5F2}
+html[data-theme=dark] .tt{background:#fff}
+@media(max-height:760px){.nh-g .nh-t small{display:none!important}}
