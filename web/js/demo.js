@@ -50,7 +50,10 @@ const H={
  'POST /api/auth/logout':()=>{const s=ST();if(s.user&&s.accounts)s.accounts[s.user.email]=s.user;delete s.user;SAVE(s);return{}},
  'GET /api/site-info':()=>({brand:'DhanKhoj',email:'',phone:'',whatsapp:'',hours:'Mon-Sat, 10:00 to 18:00 IST',address:'',topics:['Account or sign-in','Payment or plan','A match looks wrong','Claiming my dividend','Data or coverage','Partnership or press','Something else'],feedback_topics:['Idea or feature','Something is not working','Praise','Something else']}),
  'POST /api/contact':b=>{if(String(b.name||'').trim().length<2)throw err('Please tell us your name.');if(!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(b.email||''))throw err('Please enter a valid email address so we can reply.');if(String(b.message||'').trim().length<10)throw err('Please write a little more (at least 10 characters).');return{ref:'DK-PREVIEW',received:true}},
- 'GET /api/testimonials':()=>({stories:[]}),
+ 'GET /api/testimonials':()=>{let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
+  if(!on)return{stories:[]};
+  const q=['Sample text only: this card shows how a real story will look once a customer sends one.','Sample text only: a short quote from a customer would appear here, with their first name and last initial.','Sample text only: your approved customer stories scroll across this strip, right to left.','Sample text only: stories appear here after the customer agrees and you publish them in the admin panel.'];
+  return{stories:q.map((t,i)=>({sample:true,name:'Sample customer '+'ABCD'[i],city:'',rating:5,quote:t,recovered:''}))}},
  'POST /api/story':b=>{if(!b.consent)throw err('Please tick the box to let us show your story, or send it as feedback instead.');return H['POST /api/contact']({...b,message:String(b.message||'').length>=40?b.message:''})},
  'POST /api/feedback':b=>H['POST /api/contact'](b),
  'POST /api/session/ping':()=>{need();return{}},

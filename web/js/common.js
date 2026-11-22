@@ -9,7 +9,7 @@ async function api(path,body){
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
     if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info')&&!path.startsWith('/api/testimonials')&&path!=='/api/auth/login')throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795337655';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795337867';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -95,3 +95,8 @@ window.addEventListener('pageshow',e=>{if(e.persisted)location.reload()});
  const scan=r=>(r||document).querySelectorAll('input[type=password]').forEach(add);
  scan();new MutationObserver(m=>{for(const x of m)for(const n of x.addedNodes)if(n.nodeType===1)n.matches&&n.matches('input[type=password]')?add(n):scan(n)}).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+window.stCards=function(list,max){const L=(max?list.slice(0,max):list);
+ const one=s=>'<figure class="st">'+(s.sample?'<span class="pill warn">Sample - not a real customer</span>':'')+'<div class="stars-ro" aria-label="'+(s.rating||0)+' of 5">'+'&#9733;'.repeat(s.rating||0)+'<span class="off">'+'&#9733;'.repeat(5-(s.rating||0))+'</span></div><blockquote>'+esc(s.quote)+'</blockquote><figcaption><b>'+esc(s.name)+'</b>'+(s.city?', '+esc(s.city):'')+(s.recovered?' <span class="pill">Recovered '+esc(s.recovered)+'</span>':'')+'</figcaption></figure>';
+ const html=L.map(one).join('');
+ return L.length>=3?'<div class="stmq" role="region" aria-label="Customer stories"><div class="sttrack">'+html+'<span aria-hidden="true" class="stdup">'+html+'</span></div></div>':'<div class="stgrid">'+html+'</div>'};

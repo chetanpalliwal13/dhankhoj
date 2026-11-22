@@ -1,7 +1,7 @@
 (async()=>{
  const stars=n=>'&#9733;'.repeat(n||0)+'<span class="off">'+'&#9733;'.repeat(5-(n||0))+'</span>';
  try{const r=await api('/api/testimonials');
-  if(r.stories&&r.stories.length)$('#list').innerHTML=r.stories.map(s=>'<figure class="st"><div class="stars-ro" aria-label="'+(s.rating||0)+' of 5">'+stars(s.rating)+'</div><blockquote>'+esc(s.quote)+'</blockquote><figcaption><b>'+esc(s.name)+'</b>'+(s.city?', '+esc(s.city):'')+(s.recovered?' <span class="pill">Recovered '+esc(s.recovered)+'</span>':'')+'</figcaption></figure>').join('');
+  if(r.stories&&r.stories.length)$('#list').innerHTML=stCards(r.stories);
   else $('#empty').classList.remove('hide')}catch(e){$('#empty').classList.remove('hide')}
  let rating=0;
  $('#stars').innerHTML=[1,2,3,4,5].map(n=>'<button type="button" class="star" role="radio" aria-checked="false" aria-label="'+n+' of 5" data-n="'+n+'">&#9733;</button>').join('');
