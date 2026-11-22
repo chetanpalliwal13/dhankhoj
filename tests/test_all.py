@@ -614,6 +614,13 @@ class Billing_(unittest.TestCase):
             with self.assertRaises(ApiError): self.order(t, p)
             with self.assertRaises(ApiError): self.bl.upi_start(self.fresh(), t, p)
         self.assertEqual(self.db.one('SELECT COUNT(*) n FROM payments')['n'], 0); self.assertEqual(RzMock.log, [])
+    def test_active_member_cannot_downgrade_but_can_extend_or_upgrade(self):
+        self.bl.admin_grant('a@x.in', 'gold', 30)
+        with self.assertRaises(ApiError): self.order('silver', 'monthly')
+        with self.assertRaises(ApiError): self.bl.upi_start(self.fresh(), 'silver', 'yearly')
+        self.order('gold', 'monthly'); self.order('platinum', 'monthly')
+    def test_lapsed_member_may_pick_any_plan(self):
+        self.bl.admin_grant('a@x.in', 'gold', 30); self.db.x("UPDATE subscribers SET plan_until='2000-01-01'"); self.order('silver', 'monthly')
     def test_switching_tier_converts_the_days_left(self):
         self.bl.admin_grant('a@x.in', 'silver', 30); o = self.order('gold', 'monthly'); self.bl.confirm_checkout(self.fresh(), self.paid_sig(o))  # 30 days of Silver (49/mo) = 14 days of Gold (99/mo), plus 30 new
         self.assertEqual((self.fresh()['plan_tier'], self.fresh()['plan_until']), ('gold', (dt.date.today() + dt.timedelta(days=44)).isoformat()))

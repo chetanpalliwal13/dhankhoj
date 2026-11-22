@@ -4,14 +4,14 @@ function done(t){$('#opts').classList.add('hide');$('#okbox').classList.remove('
 function loadScript(src){return new Promise((ok,no)=>{if(window.Razorpay)return ok();const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('Could not load the payment window. Check your connection or ad-blocker.'));document.head.appendChild(s)})}
 const T=k=>PLAN.tiers.find(t=>t.key===k);
 const priceOf=(t,p)=>p==='yearly'?t.yearly:t.monthly;
-function cards(){const cur=PLAN.current&&PLAN.current.active?PLAN.current.tier:null;
- $('#cards').innerHTML=PLAN.tiers.map(t=>{const y=period==='yearly',isCur=cur===t.key;
+function cards(){const cur=PLAN.current&&PLAN.current.active?PLAN.current.tier:null;const ci=cur?PLAN.tiers.findIndex(x=>x.key===cur):-1;
+ $('#cards').innerHTML=PLAN.tiers.filter((t,i)=>ci<0||i>=ci).map(t=>{const y=period==='yearly',isCur=cur===t.key;
   return `<div class="tier${t.popular?' pop':''}${sel&&sel.key===t.key?' sel':''}">${t.popular?'<div class="ribbon">Most popular</div>':''}${isCur?'<div class="ribbon cur">Your plan</div>':''}
   <h3>${esc(t.label)}</h3>
   <div class="amt">${inr(y?t.yearly_per_month:t.monthly)}<small> / month</small></div>
   <div class="sub">${y?`<s>${inr(t.monthly)}</s> billed ${inr(t.yearly)} a year <span class="save">save ${t.save_percent}%</span>`:`billed monthly - or <b>${inr(t.yearly)}</b> a year (save ${t.save_percent}%)`}</div>
   <ul>${t.features.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>
-  <button type="button" class="choose" data-t="${t.key}">${isCur?'Extend ':'Choose '}${esc(t.label)}</button></div>`}).join('');
+  <button type="button" class="choose" data-t="${t.key}">${isCur?'Extend ':(cur?'Upgrade to ':'Choose ')}${esc(t.label)}</button></div>`}).join('')+(cur?'<div class="tier"><h3>Custom plan</h3><div class="sub">Need more companies, a team or a bulk set-up? Tell us what you need and we will quote a plan for you.</div><a class="btn" href="/contact.html?topic=custom">Ask for a custom plan</a></div>':'');
  $('#saveall').textContent='save up to '+Math.max(...PLAN.tiers.map(t=>t.save_percent))+'%';
  $('#pm').classList.toggle('on',period==='monthly');$('#py').classList.toggle('on',period==='yearly')}
 function checkout(){if(!sel)return;const p=period,price=priceOf(sel,p);UPI=null;$('#upi').classList.add('hide');m.classList.add('hide');$('#okbox').classList.add('hide');

@@ -40,10 +40,15 @@ class Billing:
     def upi_on(self):
         return bool(self.st.upi_vpa)
 
-    def _pick(self, tier, period):
+    def _pick(self, tier, period, u=None):
         tier, period = str(tier or '').lower(), str(period or '').lower()
         if not plans.valid(self.st, tier, period):
             raise ApiError('Please choose a plan (Silver, Gold or Platinum) and monthly or yearly billing.')
+        if u is not None and u['plan_until'] and u['plan_until'] >= dt.date.today().isoformat():
+            order = list(self.st.tiers)  # cheapest to dearest: silver, gold, platinum
+            cur = u['plan_tier'] if u['plan_tier'] in order else 'platinum'
+            if order.index(tier) < order.index(cur):
+                raise ApiError('You already have a higher plan. You can extend it, upgrade, or contact us for a custom plan.')
         return tier, period
 
     def carry_days(self, u, new_tier):
@@ -82,7 +87,7 @@ class Billing:
 
     # -------------------------------------------------------------- gateway (Razorpay / mock)
     def create_order(self, u, tier, period):
-        tier, period = self._pick(tier, period)
+        tier, period = self._pick(tier, period, u)
         prov = self.provider()
         if not prov:
             raise ApiError('Online payment is not available right now.', 503)
@@ -151,7 +156,7 @@ class Billing:
 
     # -------------------------------------------------------------- direct UPI (manual approval)
     def upi_start(self, u, tier, period):
-        tier, period = self._pick(tier, period)
+        tier, period = self._pick(tier, period, u)
         if not self.upi_on():
             raise ApiError('Direct UPI payment is not available.', 503)
         p = self.db.one("SELECT * FROM payments WHERE user_id=? AND provider='upi' AND status='created' AND created_at>? ORDER BY id DESC",

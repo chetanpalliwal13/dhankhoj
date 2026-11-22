@@ -7,6 +7,7 @@
  ch.push(['Support hours',esc(I.hours||'Mon-Sat, 10:00 to 18:00 IST'),'We reply to every message']);
  $('#chan').innerHTML=ch.map(c=>'<div class="card"><h3>'+c[0]+'</h3><p>'+c[1]+'</p><span class="mut">'+c[2]+'</span></div>').join('');
  $('#tp').innerHTML=(I.topics||['Something else']).map(t=>'<option>'+esc(t)+'</option>').join('');
+ if(new URLSearchParams(location.search).get('topic')==='custom'){$('#tp').value='Payment or plan';$('#ms').value='I would like a custom plan. What I need: ';}
  const u=await session();if(u){$('#nm').value=u.name||'';}
  $('#f').addEventListener('submit',async e=>{e.preventDefault();const m=$('#msg'),b=$('#send');m.classList.add('hide');b.disabled=true;
   try{const r=await api('/api/contact',{name:$('#nm').value,email:$('#em').value,phone:$('#ph').value,topic:$('#tp').value,message:$('#ms').value,website:$('#wb').value});
