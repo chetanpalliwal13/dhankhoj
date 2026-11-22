@@ -9,7 +9,7 @@ async function api(path,body){
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
     if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info')&&!path.startsWith('/api/testimonials')&&path!=='/api/auth/login')throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795339562';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795340617';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -23,20 +23,37 @@ async function requireLogin(){const u=await session();if(!u){location.replace('/
 function safeNext(){const n=new URLSearchParams(location.search).get('next')||'';return /^\/[A-Za-z0-9_\-.\/?=&%]*$/.test(n)&&!n.startsWith('//')?n:'/dashboard.html'}
 function initials(n){const p=String(n||'?').trim().split(/\s+/);return ((p[0]||'?')[0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase()}
 const MENU=[['/dashboard.html','Dashboard'],['/account.html#profile','Profile'],['/account.html#identity','PAN &amp; demat IDs'],['/account.html#alerts','Alerts'],['/account.html#plan','Plan &amp; payments'],['/account.html#security','Security'],['/contact.html','Help &amp; support']];
-async function buildNav(){const n=document.getElementById('nav');if(!n)return;const u=await session();
-  n.querySelectorAll('.keep').forEach(a=>a.remove());
-  if(!u){n.insertAdjacentHTML('beforeend','<a class="keep" href="/signin.html">Sign in</a><a class="keep" href="/signup.html">Sign up free</a>');return}
-  if(!n.querySelector('a[href="/dashboard.html"]:not(.keep)'))n.insertAdjacentHTML('afterbegin','<a class="keep" href="/dashboard.html">Dashboard</a>');
-  n.insertAdjacentHTML('beforeend','<div class="keep um"><button type="button" class="uav" id="umb" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">'+esc(initials(u.name))+'</button>'+
-    '<div class="umenu hide" id="umm" role="menu"><div class="umh"><span class="uav big" aria-hidden="true">'+esc(initials(u.name))+'</span><div><b>'+esc(u.name)+'</b><small>'+esc(u.email)+'</small></div></div>'+
-    MENU.map(m=>'<a role="menuitem" href="'+m[0]+'">'+m[1]+'</a>').join('')+'<hr><a role="menuitem" href="#" id="signout">Sign out</a></div></div>');
-  const b=document.getElementById('umb'),m=document.getElementById('umm');
-  const close=()=>{m.classList.add('hide');b.setAttribute('aria-expanded','false')};
-  b.addEventListener('click',e=>{e.stopPropagation();const open=m.classList.contains('hide');m.classList.toggle('hide',!open);b.setAttribute('aria-expanded',open?'true':'false')});
-  m.addEventListener('click',e=>{if(e.target.closest('a'))close()});
-  document.addEventListener('click',e=>{if(!e.target.closest('.um'))close()});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();b.focus()}});
-  document.getElementById('signout').addEventListener('click',async e=>{e.preventDefault();try{await api('/api/auth/logout',{})}catch(_){}location.replace('/')})}
+const PAGES={'/':'Home','/index.html':'Home','/dashboard.html':'Dashboard','/account.html':'Account','/upgrade.html':'Pricing','/about.html':'About us','/contact.html':'Contact & support','/feedback.html':'Feedback','/stories.html':'Customer stories','/coverage.html':'Coverage','/claim.html':'How to claim','/signin.html':'Sign in','/signup.html':'Sign up','/forgot.html':'Reset password','/reset.html':'Reset password','/terms.html':'Terms','/privacy.html':'Privacy','/admin.html':'Admin','/receipt.html':'Receipt','/experts.html':'Experts','/verify-email.html':'Confirm email','/unsubscribe.html':'Unsubscribe'};
+const I_SUN='<svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+ I_MOON='<svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+ I_CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+ I_MENU='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+const curTheme=()=>document.documentElement.getAttribute('data-theme')==='dark'?'dark':'light';
+function setTheme(t){document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('dk_theme',t)}catch(e){}const b=document.getElementById('tgl');if(b)b.setAttribute('aria-label',t==='dark'?'Switch to light theme':'Switch to dark theme')}
+let _shell=false;
+function ensureShell(){const h=document.querySelector('header.top');if(!h||_shell)return;_shell=true;
+  const nm=PAGES[location.pathname]||String(document.title||'').split(' - ')[0];
+  h.querySelector('.logo').insertAdjacentHTML('afterend','<span class="hsep" aria-hidden="true">/</span><span class="hpage">'+esc(nm)+'</span>');
+  h.insertAdjacentHTML('beforeend','<div class="hr" id="hr"></div>');
+  document.addEventListener('click',e=>{
+    if(e.target.closest('#tgl')){setTheme(curTheme()==='dark'?'light':'dark');return}
+    const hb=e.target.closest('#hbm');if(hb){const o=document.body.classList.toggle('navopen');hb.setAttribute('aria-expanded',o?'true':'false');return}
+    const b=e.target.closest('#acb'),m=document.getElementById('acm');
+    if(b&&m){const open=m.classList.contains('hide');m.classList.toggle('hide',!open);b.setAttribute('aria-expanded',open?'true':'false');return}
+    if(m&&!e.target.closest('.acct')){m.classList.add('hide');const x=document.getElementById('acb');if(x)x.setAttribute('aria-expanded','false')}
+    if(e.target.closest('#acm a')&&m)m.classList.add('hide');
+    if(!e.target.closest('#nav,#hbm'))document.body.classList.remove('navopen');
+    const so=e.target.closest('#signout');if(so){e.preventDefault();api('/api/auth/logout',{}).catch(()=>{}).then(()=>location.replace('/'))}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('acm'),b=document.getElementById('acb');if(m&&!m.classList.contains('hide')){m.classList.add('hide');b.setAttribute('aria-expanded','false');b.focus()}document.body.classList.remove('navopen')}})}
+async function buildNav(){ensureShell();const n=document.getElementById('nav'),r=document.getElementById('hr');if(!n||!r)return;const u=await session();
+  n.querySelectorAll('.keep,.dsh').forEach(a=>a.remove());
+  const t=curTheme(),th='<button type="button" class="tgl" id="tgl" aria-label="'+(t==='dark'?'Switch to light theme':'Switch to dark theme')+'">'+I_SUN+I_MOON+'</button>',hb='<button type="button" class="hbm" id="hbm" aria-label="Menu" aria-expanded="false">'+I_MENU+'</button>';
+  if(!u){r.innerHTML=th+'<a class="hsi" href="/signin.html">Sign in</a><a class="hsu" href="/signup.html">Sign up free</a>'+hb;return}
+  n.insertAdjacentHTML('afterbegin','<a class="dsh" href="/dashboard.html">Dashboard</a>');
+  const pn=u.plan&&u.plan.active?'<span class="pill">'+esc(u.plan.label)+' plan</span>':'<span class="pill">Free plan</span>';
+  r.innerHTML=th+'<div class="acct"><button type="button" class="achip" id="acb" aria-haspopup="true" aria-expanded="false" aria-label="Account menu"><span class="uav" aria-hidden="true">'+esc(initials(u.name))+'</span>'+I_CHEV+'</button>'+
+    '<div class="amenu hide" id="acm" role="menu"><div class="umh"><span class="uav" aria-hidden="true">'+esc(initials(u.name))+'</span><div><b>'+esc(u.name)+'</b><small>'+esc(u.email)+'</small>'+pn+'</div></div>'+
+    MENU.map(m=>'<a role="menuitem" href="'+m[0]+'">'+m[1]+'</a>').join('')+'<hr><a role="menuitem" href="#" id="signout">Sign out</a></div></div>'+hb}
 // ---- header: grouped dropdown menus on every page
 (function(){const n=document.getElementById('nav');if(!n)return;
  const dd=(t,items)=>'<div class="dd"><button type="button" class="ddb" aria-expanded="false">'+t+'</button><div class="ddp">'+items.map(i=>'<a href="'+i[0]+'">'+i[1]+'<small>'+i[2]+'</small></a>').join('')+'</div></div>';
