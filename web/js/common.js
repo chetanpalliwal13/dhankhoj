@@ -9,7 +9,7 @@ async function api(path,body){
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
     if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info')&&!path.startsWith('/api/testimonials')&&path!=='/api/auth/login')throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795354471';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795355577';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -65,7 +65,7 @@ async function buildNav(){ensureShell();const n=document.getElementById('nav'),r
  const sc=()=>document.body.classList.toggle('scrolled',scrollY>24);addEventListener('scroll',sc,{passive:true});sc()})();
 
 // ---- header search (sample companies) and the assistant launcher. Both load their code only when first used.
-function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795354471';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795355577';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
 let _dx=null;function loadDX(){return _dx||(_dx=loadJS('/js/divdata.js').then(()=>loadJS('/js/dxengine.js')).then(()=>window.dxLoad()))}
 function initSearch(){const q=document.getElementById('hsq'),box=document.getElementById('hsr');if(!q)return;let rows=[],sel=-1,list=[];
   const close=()=>{box.classList.add('hide');q.setAttribute('aria-expanded','false');sel=-1};
