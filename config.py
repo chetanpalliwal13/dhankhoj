@@ -60,7 +60,7 @@ class Settings:
         self.secure_cookies = flag('SECURE_COOKIES', env('BASE_URL', '').startswith('https://'))
         # plans: Free (FREE_COMPANIES companies, email alerts) + three memberships. Prices are INCLUDING any GST.
         # Yearly price = monthly x 12 less YEARLY_DISCOUNT_PERCENT, unless <TIER>_YEARLY_INR is set. <TIER>_COMPANIES=unlimited removes the cap.
-        self.free_companies = int(env('FREE_COMPANIES', '5'))
+        self.free_companies = int(env('FREE_COMPANIES', '1'))
         self.max_dp_ids = 5                                         # demat (DP-Client ID) / folio numbers a member can store
         self.yearly_discount = float(env('YEARLY_DISCOUNT_PERCENT', '20'))
         self.tiers = {}

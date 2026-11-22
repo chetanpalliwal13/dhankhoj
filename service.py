@@ -234,7 +234,12 @@ class Service:
         vis = self.visible_companies(u)
         if vis is None:
             return list(rows), []
-        return [m for m in rows if m['cid'] in vis], [m for m in rows if m['cid'] not in vis]
+        shown, locked = [m for m in rows if m['cid'] in vis], [m for m in rows if m['cid'] not in vis]
+        if not self.plan_state(u)['active'] and shown:  # free plan: one company, and only its latest-year entries
+            latest = max((m['fy'] or '') for m in shown)
+            locked += [m for m in shown if (m['fy'] or '') != latest]
+            shown = [m for m in shown if (m['fy'] or '') == latest]
+        return shown, locked
 
     # ------------------------------------------------------------ dashboard
     def summary(self, sid):
@@ -311,7 +316,7 @@ class Service:
         out['sample'] = True
         return out
 
-    def search(self, u, modes, wipe=True):
+    def search(self, u, modes, wipe=True, extra=None):
         """Dashboard search with the keys the user ticked. Results are stored as matches (so the claim flow can refer to them) and returned like me()."""
         modes = {x for x in (modes or []) if x in ('pan', 'ids', 'name', 'address')}
         if not modes:
@@ -322,11 +327,22 @@ class Service:
         folios = json.loads(u['folios'] or '[]')
         if 'pan' in modes and not pan:
             raise ApiError('Add your PAN in your profile first, or untick PAN.')
-        if 'ids' in modes and not folios:
+        if 'ids' in modes and not folios and not (extra and extra.get('folio')):
             raise ApiError('Add your DP-Client ID or folio number in your profile first, or untick it.')
         if 'address' in modes and not ((u['address'] or u['city']) and u['pincode']):
             raise ApiError('Address search needs your address and PIN code in your profile. Add them or untick Address.')
         name, aliases, pin, _ = self._sub_inputs(u)
+        if extra:  # details typed on the home page before sign-in: used for this search only, not saved to the profile
+            en = clean_name(' '.join(str(extra.get('name') or '').split()))
+            if en and len(M.norm_tokens(en)) >= 2 and M.norm_tokens(en) != M.norm_tokens(name):
+                aliases = list(aliases) + [en]
+            pin = pin or clean_pin(str(extra.get('pincode') or ''))
+            ef = clean_folios([str(extra.get('folio') or '')]) if extra.get('folio') else []
+            folios = clean_folios(list(folios) + ef) if ef else folios
+            if ef:
+                modes = modes | {'ids'}
+            if en:
+                modes = modes | {'name'}
         found = M.search_matches(self.db, modes, name, aliases, pin, folios, pan, u['father_name'] or '', u['address'] or '', u['city'] or '', limit=500)
         c = self.db.conn
         keep = [r['id'] for r, _, _, _ in found]

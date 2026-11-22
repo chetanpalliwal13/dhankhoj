@@ -19,7 +19,7 @@ function draw(d){D=d;window.dkLast=d;setTimeout(()=>window.dispatchEvent(new Cus
  $('#s_n').textContent=k+d.possible.length;$('#s_c').textContent=k+' likely, '+d.possible.length+' weak';
  $('#s_d').textContent=dl.length?(dl[0]<=0?'passed':dl[0]>=365?Math.round(dl[0]/36.5)/10+' yrs':dl[0]+' days'):'-';$('#s_dd').textContent=dl.length?'earliest of your entries':'';
  $('#s_h').textContent=strong;
- $('#needpan').classList.toggle('hide',!d.needs_pan);$('#results').classList.toggle('hide',d.needs_pan);$('#tip').classList.toggle('hide',d.dp_count>0);
+ $('#needpan').classList.toggle('hide',!d.needs_pan);$('#results').classList.toggle('hide',d.needs_pan&&!(d.likely.length||d.possible.length||d.locked.entries));$('#tip').classList.toggle('hide',d.dp_count>0);
  const has={pan:!!p.pan_masked,ids:p.ids.length>0,name:true,address:!!p.has_address};
  for(const key of ['pan','ids','name','address']){const el=$('#m_'+key),h=$('#h_'+key);el.disabled=!has[key];if(!has[key]){el.checked=false;h.innerHTML=TXT[key]+' - <a href="/account.html#'+(key==='address'?'profile':'identity')+'">open profile</a>'}
   else{h.textContent=key==='pan'?p.pan_masked:key==='ids'?p.ids.join(', '):key==='name'?p.name:'from your profile';if(!SEEN)el.checked=key!=='address'}}
@@ -36,7 +36,10 @@ async function load(){try{draw(await api('/api/dashboard'))}catch(e){
   if(e.need==='login')return location.replace('/signin.html?next=/dashboard.html');
   if(e.need==='verify_email'){$('#verify').classList.remove('hide');return}
   show(m,'err',e.message)}}
-(async()=>{const u=await requireLogin();if(!u)return;if(!u.phone_verified)$('#phonebar').classList.remove('hide');load()})();
+(async()=>{const u=await requireLogin();if(!u)return;if(!u.phone_verified)$('#phonebar').classList.remove('hide');await load();
+ let dr=null;try{dr=JSON.parse(localStorage.getItem('dk_draft')||'null')}catch(_){}try{localStorage.removeItem('dk_draft')}catch(_){}
+ if(dr&&Date.now()-dr.t<864e5&&(dr.name||dr.folio)){const modes=['name'];if(D&&D.profile){if(D.profile.pan_masked)modes.push('pan');if(D.profile.ids.length)modes.push('ids')}
+  try{draw(await api('/api/me/search',{modes,extra:{name:dr.name,pincode:dr.pincode,folio:dr.folio}}));show(m,'ok','We searched with the details you entered on the home page.')}catch(e){show(m,'err',e.message)}}})();
 $('#bresend').addEventListener('click',async()=>{const x=$('#vmsg');try{const r=await api('/api/auth/resend-verification',{});show(x,'ok','If your email still needs confirming, a new link is on its way.');if(r.dev_link)show($('#vdev'),'ok','DEV MODE - confirmation link: '+r.dev_link)}catch(e){show(x,'err',e.message)}});
 $('#creq').addEventListener('click',async()=>{const x=$('#cmsg');const ids=[...document.querySelectorAll('.pick:checked')].map(i=>+i.value);
  try{await api('/api/me/claim',{match_ids:ids,notes:$('#cnotes').value,consent:$('#cconsent').checked});show(x,'ok','Request sent. You will get a written quote by email.');load()}catch(e){show(x,'err',e.message)}});

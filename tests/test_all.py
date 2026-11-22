@@ -385,7 +385,7 @@ class Channels(unittest.TestCase):
 
 class Gating(unittest.TestCase):
     def setUp(self):
-        self.st, self.db, self.svc, self.au, self.bl, self.cl = stack(); add_companies(self.db, 7); self.n = self.svc.n; self.n.sent.clear(); self.u, _ = register(self.au)
+        self.st, self.db, self.svc, self.au, self.bl, self.cl = stack(); self.st.free_companies = 5; add_companies(self.db, 7); self.n = self.svc.n; self.n.sent.clear(); self.u, _ = register(self.au)
     def me(self): return self.svc.me(self.au._get(self.u['id']))
     def test_first_five_free_soonest_deadline_first(self):
         me = self.me(); names = {i['company'] for i in me['likely']}; self.assertEqual(names, {'Gate Co %d' % i for i in range(5)})
@@ -423,7 +423,7 @@ class Gating(unittest.TestCase):
     def test_editing_profile_releases_free_slots(self):
         self.au.update_profile(self.au._get(self.u['id']), {'first_name': 'Priya', 'last_name': 'Nair', 'pincode': '682001'}); me = self.me(); self.assertEqual([i['company'] for i in me['likely']], ['Test Co Ltd']); self.assertEqual(me['plan']['used'], 1)
     def test_public_check_is_capped_to_free_size(self):
-        r = self.svc.check('Anita Desai', '411001'); self.assertEqual((len(r['results']), r['more']), (5, 3)); self.assertIn('5 companies', r['note'])
+        self.st.free_companies = 1; r = self.svc.check('Anita Desai', '411001'); self.assertEqual((len(r['results']), r['more']), (1, 7)); self.assertIn('1 compan', r['note'])
     def test_each_user_has_their_own_five(self):
         u2, _ = register(self.au, email='b@x.in', pan='XYZPD9999Z', mobile='9123456780'); self.assertEqual(len(self.svc.me(u2)['likely']), 5)
 
@@ -706,11 +706,11 @@ class Live(unittest.TestCase):
             self.assertFalse(re.search(r'<script(?![^>]*\bsrc=)', t), f + ': inline script'); self.assertFalse(re.search(r'\son\w+\s*=', t), f + ': inline handler')
             for js in re.findall(r'src="(/js/[^"]+)"', t): self.assertEqual(self.req(js)[0], 200, f + ' -> ' + js)
     def test_stats_plan_options(self):
-        self.assertGreaterEqual(self.j('/api/stats')[1]['records'], 5); c, p = self.j('/api/plan'); self.assertEqual((p['free_companies'], [t['key'] for t in p['tiers']], p['tiers'][0]['monthly'], p['tiers'][0]['yearly']), (5, ['silver', 'gold', 'platinum'], 49.0, 470.0)); self.assertNotIn('current', p); self.assertIn('Maharashtra', self.j('/api/form-options')[1]['states'])
+        self.assertGreaterEqual(self.j('/api/stats')[1]['records'], 5); c, p = self.j('/api/plan'); self.assertEqual((p['free_companies'], [t['key'] for t in p['tiers']], p['tiers'][0]['monthly'], p['tiers'][0]['yearly']), (1, ['silver', 'gold', 'platinum'], 49.0, 470.0)); self.assertNotIn('current', p); self.assertIn('Maharashtra', self.j('/api/form-options')[1]['states'])
     def test_check_api(self):
-        c, j = self.j('/api/check', {'name': 'Anita Desai', 'pincode': '411001'}); self.assertEqual((c, j['likely']), (200, 1)); self.assertEqual(self.j('/api/check', {'name': 'X'})[0], 400)
+        self.assertEqual(self.j('/api/check', {'name': 'Anita Desai', 'pincode': '411001'})[0], 401)  # searching needs an account
     def test_json_required_and_size(self):
-        self.assertEqual(self.req('/api/check', raw=b'{}', headers={'Content-Type': 'text/plain'})[0], 415); self.assertEqual(self.req('/api/check', raw=b'x' * 70000, headers={'Content-Type': 'application/json'})[0], 413)
+        self.assertEqual(self.req('/api/auth/login', raw=b'{}', headers={'Content-Type': 'text/plain'})[0], 415); self.assertEqual(self.req('/api/auth/login', raw=b'x' * 70000, headers={'Content-Type': 'application/json'})[0], 413)
     def test_removed_anonymous_endpoints_are_gone(self):
         for p in ('/api/subscribe', '/api/verify', '/api/resend', '/api/me/update', '/api/unsubscribe'): self.assertEqual(self.j(p, {})[0], 404, p)
         self.assertEqual(self.req('/api/me?t=abc')[0], 404)

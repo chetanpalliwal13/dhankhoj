@@ -34,7 +34,7 @@ function setMode(m){S.mode=m;const up=m==='signup',done=m==='done';
  q('#amview').classList.toggle('hide',done);q('#amdone').classList.toggle('hide',!done);if(done)return q('#amdone .amgo').focus();
  q('#amfi').classList.toggle('hide',up);q('#amfu').classList.toggle('hide',!up);q('#amm').classList.add('hide');
  q('#amt').textContent=up?'Create your free account':'Welcome back';
- q('#amsub').textContent=up?'Free for up to 5 companies. Upgrade any time. No card needed.':'Sign in to see your unclaimed dividends.';
+ q('#amsub').textContent=up?'Free plan: 1 company, latest year. Upgrade any time. No card needed.':'Sign in to see your unclaimed dividends.';
  q('#amgt').textContent=up?'Sign up with Google':'Sign in with Google';
  el.querySelectorAll('.amtabs button').forEach(b=>{const on=b.dataset.m===m;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false')});
  const first=up?'#am-fn':'#am-em';setTimeout(()=>{const f=q(first);if(f)f.focus()},30)}

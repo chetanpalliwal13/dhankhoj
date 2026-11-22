@@ -315,8 +315,7 @@ def make_handler(svc, st, rl):
                 # ---- public: accounts
                 if u.path == '/api/check':
                     self.limit('check:' + ip, 20, 60)
-                    d = self.body_json()
-                    return self.json({'ok': True, **svc.check(d.get('name', ''), d.get('pincode', ''), d.get('folio', ''))})
+                    raise ApiError('Please sign in or create a free account to check your name.', 401)
                 if u.path == '/api/auth/signup':
                     self.limit('su:' + ip, 10, 3600)
                     d = self.body_json()
@@ -332,7 +331,7 @@ def make_handler(svc, st, rl):
                     usr = self.vuser()
                     self.limit('search:%s' % usr['id'], 30, 300)
                     d = self.body_json()
-                    return self.json({'ok': True, **svc.search(usr, d.get('modes') or [])})
+                    return self.json({'ok': True, **svc.search(usr, d.get('modes') or [], extra=d.get('extra') if isinstance(d.get('extra'), dict) else None)})
                 if u.path == '/api/session/ping':
                     self.user()
                     return self.json({'ok': True})
