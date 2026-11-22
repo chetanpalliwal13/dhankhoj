@@ -339,3 +339,5 @@ html[data-theme=dark] .hform{background:var(--card);border-color:var(--line);box
 /* spacing under the fixed header: body already reserves it, so pages only add a small gap */
 .nh{padding:36px 0 44px!important}.nh-g{align-items:start!important}.nh-e{padding-top:36px}
 .ab-hero,.ct-hero{padding-top:6px!important}.hero{padding-top:8px!important}
+.appmain>h1#at{font:700 22px var(--hf);margin:6px 0 14px}.side hr{border:0;border-top:1px solid var(--line);margin:10px 4px}
+.appmain #main{background:none!important;padding:0!important;border:0!important;box-shadow:none!important}

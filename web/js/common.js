@@ -9,7 +9,7 @@ async function api(path,body){
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
     if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info')&&!path.startsWith('/api/testimonials')&&path!=='/api/auth/login')throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795352974';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795353203';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -22,7 +22,7 @@ async function session(){if(!ME.loaded){try{ME.user=(await api('/api/session')).
 async function requireLogin(){const u=await session();if(!u){location.replace('/signin.html?next='+encodeURIComponent(location.pathname+location.search));return null}return u}
 function safeNext(){const n=new URLSearchParams(location.search).get('next')||'';return /^\/[A-Za-z0-9_\-.\/?=&%]*$/.test(n)&&!n.startsWith('//')?n:'/dashboard.html'}
 function initials(n){const p=String(n||'?').trim().split(/\s+/);return ((p[0]||'?')[0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase()}
-const MENU=[['/dashboard.html','Dashboard'],['/account.html#profile','Profile'],['/account.html#identity','PAN &amp; demat IDs'],['/account.html#alerts','Alerts'],['/account.html#plan','Plan &amp; payments'],['/account.html#security','Security'],['/contact.html','Help &amp; support']];
+const MENU=[['/account.html#profile','Profile'],['/account.html#identity','PAN &amp; demat IDs'],['/account.html#alerts','Alerts'],['/account.html#plan','Plan &amp; payments'],['/account.html#security','Security'],['/contact.html','Help &amp; support']];
 const PAGES={'/':'Home','/index.html':'Home','/dashboard.html':'Dashboard','/account.html':'Account','/upgrade.html':'Pricing','/about.html':'About us','/contact.html':'Contact & support','/feedback.html':'Feedback','/stories.html':'Customer stories','/coverage.html':'Coverage','/claim.html':'How to claim','/signin.html':'Sign in','/signup.html':'Sign up','/forgot.html':'Reset password','/reset.html':'Reset password','/terms.html':'Terms','/privacy.html':'Privacy','/admin.html':'Admin','/receipt.html':'Receipt','/experts.html':'Experts','/verify-email.html':'Confirm email','/unsubscribe.html':'Unsubscribe'};
 const I_SUN='<svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
  I_MOON='<svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
@@ -65,7 +65,7 @@ async function buildNav(){ensureShell();const n=document.getElementById('nav'),r
  const sc=()=>document.body.classList.toggle('scrolled',scrollY>24);addEventListener('scroll',sc,{passive:true});sc()})();
 
 // ---- header search (sample companies) and the assistant launcher. Both load their code only when first used.
-function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795352974';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795353203';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
 let _dx=null;function loadDX(){return _dx||(_dx=loadJS('/js/divdata.js').then(()=>loadJS('/js/dxengine.js')).then(()=>window.dxLoad()))}
 function initSearch(){const q=document.getElementById('hsq'),box=document.getElementById('hsr');if(!q)return;let rows=[],sel=-1,list=[];
   const close=()=>{box.classList.add('hide');q.setAttribute('aria-expanded','false');sel=-1};
