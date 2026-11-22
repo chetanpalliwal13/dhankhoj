@@ -49,7 +49,6 @@ async function buildNav(){ensureShell();const n=document.getElementById('nav'),r
   n.querySelectorAll('.keep,.dsh').forEach(a=>a.remove());
   const t=curTheme(),th='<button type="button" class="tgl" id="tgl" aria-label="'+(t==='dark'?'Switch to light theme':'Switch to dark theme')+'">'+I_SUN+I_MOON+'</button>',hb='<button type="button" class="hbm" id="hbm" aria-label="Menu" aria-expanded="false">'+I_MENU+'</button>';
   if(!u){r.innerHTML=th+'<a class="hsi" href="/signin.html">Sign in</a><a class="hsu" href="/signup.html">Sign up free</a>'+hb;return}
-  n.insertAdjacentHTML('afterbegin','<a class="dsh" href="/dashboard.html">Dashboard</a>');
   const pn=u.plan&&u.plan.active?'<span class="pill">'+esc(u.plan.label)+' plan</span>':'<span class="pill">Free plan</span>';
   r.innerHTML=th+'<div class="acct"><button type="button" class="achip" id="acb" aria-haspopup="true" aria-expanded="false" aria-label="Account menu"><span class="uav" aria-hidden="true">'+esc(initials(u.name))+'</span>'+I_CHEV+'</button>'+
     '<div class="amenu hide" id="acm" role="menu"><div class="umh"><span class="uav" aria-hidden="true">'+esc(initials(u.name))+'</span><div><b>'+esc(u.name)+'</b><small>'+esc(u.email)+'</small>'+pn+'</div></div>'+
@@ -57,7 +56,7 @@ async function buildNav(){ensureShell();const n=document.getElementById('nav'),r
 // ---- header: grouped dropdown menus on every page
 (function(){const n=document.getElementById('nav');if(!n)return;
  const dd=(t,items)=>'<div class="dd"><button type="button" class="ddb" aria-expanded="false">'+t+'</button><div class="ddp">'+items.map(i=>'<a href="'+i[0]+'">'+i[1]+'<small>'+i[2]+'</small></a>').join('')+'</div></div>';
- n.innerHTML=dd('Product',[['/dashboard.html','Dashboard','Search and track your dividends'],['/insights.html','Dividend insights','Rankings by yield, consistency and return'],['/coverage.html','Coverage','Which companies we have checked'],['/upgrade.html','Pricing','Free and paid plans']])+
+ n.innerHTML=dd('Product',[['/dashboard.html','Dashboard','Search and track your dividends'],['/insights.html','Dividend insights','Rankings by yield, consistency and return'],['/coverage.html','Coverage','Which companies we have checked']])+
   dd('Learn',[['/#how','How it works','The seven-year rule explained'],['/claim.html','How to claim','Step-by-step, free of charge'],['/#faq','Questions','Short answers']])+
   dd('Company',[['/about.html','About us','Who builds DhanKhoj'],['/contact.html','Contact &amp; support','Write to us'],['/stories.html','Customer stories','How others found their money'],['/feedback.html','Feedback','Tell us what to improve']])+'<a href="/upgrade.html">Pricing</a>';
  n.addEventListener('click',e=>{const b=e.target.closest('.ddb');document.querySelectorAll('.dd.open').forEach(d=>{if(!b||d!==b.parentElement)d.classList.remove('open')});if(b){const d=b.parentElement;d.classList.toggle('open');b.setAttribute('aria-expanded',d.classList.contains('open'))}});
@@ -66,7 +65,7 @@ async function buildNav(){ensureShell();const n=document.getElementById('nav'),r
  const sc=()=>document.body.classList.toggle('scrolled',scrollY>24);addEventListener('scroll',sc,{passive:true});sc()})();
 
 // ---- header search (sample companies) and the assistant launcher. Both load their code only when first used.
-function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795348922';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+function loadJS(src){return new Promise((ok,no)=>{if(document.querySelector('script[data-l="'+src+'"]'))return ok();const e=document.createElement('script');e.src=src+'?v=1795349282';e.dataset.l=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
 let _dx=null;function loadDX(){return _dx||(_dx=loadJS('/js/divdata.js').then(()=>loadJS('/js/dxengine.js')).then(()=>window.dxLoad()))}
 function initSearch(){const q=document.getElementById('hsq'),box=document.getElementById('hsr');if(!q)return;let rows=[],sel=-1,list=[];
   const close=()=>{box.classList.add('hide');q.setAttribute('aria-expanded','false');sel=-1};
