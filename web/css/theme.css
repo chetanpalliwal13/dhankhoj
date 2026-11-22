@@ -143,3 +143,4 @@ label.chk{display:flex;gap:10px;align-items:flex-start;margin:14px 0;font-weight
 .sttrack .st{width:320px;flex:none;white-space:normal}.stdup{display:contents}
 @keyframes stmq{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 9px))}}
 @media (prefers-reduced-motion:reduce){.sttrack{animation:none;width:auto;flex-wrap:wrap}.stdup{display:none}.stmq{-webkit-mask-image:none;mask-image:none}}
+.st blockquote{font-size:15px}.st figcaption b{display:block}
