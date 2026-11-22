@@ -1128,6 +1128,20 @@ class SupportTests(unittest.TestCase):
         with self.assertRaises(ApiError): self.sp.submit('feedback', self.ok(rating=9))
     def test_unknown_topic_falls_back(self):
         self.sp.submit('contact', self.ok(topic='<script>')); self.assertEqual(self.sp.admin_messages()['messages'][0]['topic'], 'Something else')
+    def story(self, **kw):
+        d = self.ok(message='I found an old dividend from a company I forgot about and claimed it.', consent=True, rating=5, city='Pune'); d.update(kw); return d
+    def test_story_needs_consent_and_length(self):
+        with self.assertRaises(ApiError): self.sp.submit('story', self.story(consent=False))
+        with self.assertRaises(ApiError): self.sp.submit('story', self.story(message='too short'))
+    def test_story_hidden_until_published_and_shows_initial_only(self):
+        self.sp.submit('story', self.story()); self.assertEqual(self.sp.testimonials()['stories'], [])
+        mid = self.sp.admin_messages(kind='story')['messages'][0]['id']
+        self.sp.admin_story_publish(mid, True)
+        s = self.sp.testimonials()['stories']; self.assertEqual((len(s), s[0]['name'], s[0]['city']), (1, 'Asha R.', 'Pune'))
+        self.sp.admin_story_publish(mid, False); self.assertEqual(self.sp.testimonials()['stories'], [])
+    def test_cannot_publish_non_story(self):
+        self.sp.submit('contact', self.ok()); mid = self.sp.admin_messages()['messages'][0]['id']
+        with self.assertRaises(ApiError): self.sp.admin_story_publish(mid, True)
     def test_per_email_hourly_limit(self):
         for i in range(5): self.sp.submit('contact', self.ok())
         with self.assertRaises(ApiError) as c: self.sp.submit('contact', self.ok())

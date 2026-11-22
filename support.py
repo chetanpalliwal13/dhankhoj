@@ -5,7 +5,7 @@ import secrets
 
 from service import ApiError
 
-KINDS = ('contact', 'feedback')
+KINDS = ('contact', 'feedback', 'story')
 TOPICS = ('Account or sign-in', 'Payment or plan', 'A match looks wrong', 'Claiming my dividend', 'Data or coverage', 'Partnership or press', 'Something else')
 FEEDBACK_TOPICS = ('Idea or feature', 'Something is not working', 'Praise', 'Something else')
 STATUSES = ('new', 'open', 'resolved', 'spam')
@@ -46,10 +46,19 @@ class Support:
             raise ApiError('Please enter a valid email address so we can reply.')
         if len(body) < 10:
             raise ApiError('Please write a little more (at least 10 characters).')
-        if topic not in (TOPICS if kind == 'contact' else FEEDBACK_TOPICS):
+        if kind == 'story':
+            topic = 'Customer story'
+        elif topic not in (TOPICS if kind == 'contact' else FEEDBACK_TOPICS):
             topic = 'Something else'
+        city = _clip(d.get('city'), 60)
+        recovered = _clip(d.get('recovered'), 40)
+        consent = 1 if d.get('consent') in (True, 1, '1', 'true', 'yes') else 0
+        if kind == 'story' and not consent:
+            raise ApiError('Please tick the box to let us show your story, or send it as feedback instead.')
+        if kind == 'story' and len(body) < 40:
+            raise ApiError('Please tell your story in a few more words (at least 40 characters).')
         rating = None
-        if kind == 'feedback' and d.get('rating') not in (None, ''):
+        if kind in ('feedback', 'story') and d.get('rating') not in (None, ''):
             try:
                 rating = int(d.get('rating'))
             except (TypeError, ValueError):
@@ -59,9 +68,28 @@ class Support:
         if self.db.one("SELECT COUNT(*) n FROM messages WHERE email=? AND created_at>?", (email, (dt.datetime.now() - dt.timedelta(hours=1)).isoformat(timespec='seconds')))['n'] >= 5:
             raise ApiError('You have sent several messages in the last hour. Please wait a little before sending another.', 429)
         ref = 'DK-%s' % secrets.token_hex(3).upper()
-        self.db.x('INSERT INTO messages(kind,ref,user_id,name,email,phone,topic,rating,body,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
-                  (kind, ref, user['id'] if user else None, name, email, phone, topic, rating, body, 'new', now(), now()))
+        self.db.x('INSERT INTO messages(kind,ref,user_id,name,email,phone,topic,rating,body,status,created_at,updated_at,city,recovered,consent_publish,published) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)',
+                  (kind, ref, user['id'] if user else None, name, email, phone, topic, rating, body, 'new', now(), now(), city, recovered, consent))
         return {'ref': ref, 'received': True}
+
+    def testimonials(self):
+        """Public: only stories the owner has approved, shown as first name + last initial. Nothing is ever invented."""
+        rows = self.db.q("SELECT name, city, rating, body, recovered FROM messages WHERE kind='story' AND published=1 AND consent_publish=1 AND status!='spam' ORDER BY updated_at DESC LIMIT 30")
+        out = []
+        for r in rows:
+            parts = (r['name'] or '').split()
+            shown = parts[0] + (' %s.' % parts[-1][0].upper() if len(parts) > 1 else '')
+            out.append({'name': shown, 'city': r['city'] or '', 'rating': r['rating'], 'quote': r['body'], 'recovered': r['recovered'] or ''})
+        return {'stories': out}
+
+    def admin_story_publish(self, mid, publish):
+        m = self.db.one('SELECT kind, consent_publish FROM messages WHERE id=?', (mid,))
+        if not m or m['kind'] != 'story':
+            raise ApiError('Story not found.', 404)
+        if publish and not m['consent_publish']:
+            raise ApiError('This person did not give permission to publish.')
+        self.db.x('UPDATE messages SET published=?, updated_at=? WHERE id=?', (1 if publish else 0, now(), mid))
+        return {'ok': True}
 
     # ------------------------------------------------------------------ admin
     def admin_messages(self, status='', kind=''):

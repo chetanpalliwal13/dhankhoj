@@ -120,6 +120,10 @@ class DB:
         c.execute('CREATE INDEX IF NOT EXISTS idx_rec_pin ON records(pincode)')
         c.execute('CREATE INDEX IF NOT EXISTS idx_co_isin ON companies(isin)')
         c.execute('CREATE INDEX IF NOT EXISTS idx_co_cin ON companies(cin)')
+        mc = {r['name'] for r in c.execute('PRAGMA table_info(messages)')}
+        for name, typ in (('published', 'INTEGER DEFAULT 0'), ('consent_publish', 'INTEGER DEFAULT 0'), ('city', 'TEXT'), ('recovered', 'TEXT')):
+            if name not in mc:
+                c.execute('ALTER TABLE messages ADD COLUMN %s %s' % (name, typ))
         pc = {r['name'] for r in c.execute('PRAGMA table_info(payments)')}
         for name, typ in (('tier', 'TEXT'), ('period', 'TEXT')):
             if name not in pc:

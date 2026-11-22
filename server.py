@@ -259,6 +259,8 @@ def make_handler(svc, st, rl):
                     return self.json({'ok': True, 'payments': bl.history(self.user())})
                 if u.path == '/api/pay/receipt':
                     return self.json({'ok': True, **bl.receipt(self.user(), int((q.get('id') or ['0'])[0]))})
+                if u.path == '/api/testimonials':
+                    return self.json({'ok': True, **sp.testimonials()})
                 if u.path == '/api/site-info':
                     return self.json({'ok': True, **sp.site_info()})
                 if u.path == '/api/admin/messages':
@@ -429,7 +431,7 @@ def make_handler(svc, st, rl):
                     usr = self.vuser()
                     d = self.body_json()
                     return self.json({'ok': True, **bl.upi_submit(usr, int(d.get('payment_id', 0)), d.get('utr', ''))})
-                if u.path in ('/api/contact', '/api/feedback'):
+                if u.path in ('/api/contact', '/api/feedback', '/api/story'):
                     self.limit('msg:' + ip, 10, 3600, 'Too many messages from this connection. Please try again later.')
                     try:
                         usr = au.user_for(self.session_token())
@@ -445,6 +447,10 @@ def make_handler(svc, st, rl):
                     self.admin()
                     d = self.body_json()
                     return self.json(sp.admin_message_update(int(d.get('id', 0)), d.get('status', ''), d.get('note', '')))
+                if u.path == '/api/admin/story/publish':
+                    self.admin()
+                    d = self.body_json()
+                    return self.json(sp.admin_story_publish(int(d.get('id', 0)), bool(d.get('publish'))))
                 if u.path == '/api/admin/user/delete':
                     self.admin()
                     return self.json(sp.admin_user_delete(int(self.body_json().get('id', 0))))

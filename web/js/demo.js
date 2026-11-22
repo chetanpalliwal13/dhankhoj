@@ -50,6 +50,8 @@ const H={
  'POST /api/auth/logout':()=>{const s=ST();if(s.user&&s.accounts)s.accounts[s.user.email]=s.user;delete s.user;SAVE(s);return{}},
  'GET /api/site-info':()=>({brand:'DhanKhoj',email:'',phone:'',whatsapp:'',hours:'Mon-Sat, 10:00 to 18:00 IST',address:'',topics:['Account or sign-in','Payment or plan','A match looks wrong','Claiming my dividend','Data or coverage','Partnership or press','Something else'],feedback_topics:['Idea or feature','Something is not working','Praise','Something else']}),
  'POST /api/contact':b=>{if(String(b.name||'').trim().length<2)throw err('Please tell us your name.');if(!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(b.email||''))throw err('Please enter a valid email address so we can reply.');if(String(b.message||'').trim().length<10)throw err('Please write a little more (at least 10 characters).');return{ref:'DK-PREVIEW',received:true}},
+ 'GET /api/testimonials':()=>({stories:[]}),
+ 'POST /api/story':b=>{if(!b.consent)throw err('Please tick the box to let us show your story, or send it as feedback instead.');return H['POST /api/contact']({...b,message:String(b.message||'').length>=40?b.message:''})},
  'POST /api/feedback':b=>H['POST /api/contact'](b),
  'POST /api/session/ping':()=>{need();return{}},
  'GET /api/dashboard':()=>dash(need()),

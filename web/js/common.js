@@ -8,8 +8,8 @@ async function api(path,body){
   let r;try{r=await fetch(path,o)}catch(e){throw new Error('Network problem. Please try again.')}
   if(!(r.headers.get('content-type')||'').includes('json')){
     let on=false;try{on=localStorage.getItem('dk_preview_on')==='1'}catch(e){}
-    if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info')&&path!=='/api/auth/login')throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
-    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795276311';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    if(!on&&!path.startsWith('/api/plan')&&!path.startsWith('/api/site-info')&&!path.startsWith('/api/testimonials')&&path!=='/api/auth/login')throw new Error('The full app is not open to the public yet. Please check back soon.');  // no DhanKhoj server behind this address (plain static hosting): switch to the sample-data preview
+    if(!window.DEMO_P)window.DEMO_P=new Promise((res,rej)=>{const s=document.createElement('script');s.src='/js/demo.js?v=1795337655';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     try{await window.DEMO_P;return window.demoApi(path,body)}catch(e){}}
   const j=await r.json().catch(()=>({ok:false,error:'Unexpected response.'}));
   if(!j.ok){const e=new Error(j.error||'Request failed');e.need=j.need;e.status=r.status;throw e}return j;
@@ -42,7 +42,7 @@ async function buildNav(){const n=document.getElementById('nav');if(!n)return;co
  const dd=(t,items)=>'<div class="dd"><button type="button" class="ddb" aria-expanded="false">'+t+'</button><div class="ddp">'+items.map(i=>'<a href="'+i[0]+'">'+i[1]+'<small>'+i[2]+'</small></a>').join('')+'</div></div>';
  n.innerHTML=dd('Product',[['/dashboard.html','Dashboard','Search and track your dividends'],['/coverage.html','Coverage','Which companies we have checked'],['/upgrade.html','Pricing','Free and paid plans']])+
   dd('Learn',[['/#how','How it works','The seven-year rule explained'],['/claim.html','How to claim','Step-by-step, free of charge'],['/#faq','Questions','Short answers']])+
-  dd('Company',[['/about.html','About us','Who builds DhanKhoj'],['/contact.html','Contact &amp; support','Write to us'],['/feedback.html','Feedback','Tell us what to improve']])+'<a href="/upgrade.html">Pricing</a>';
+  dd('Company',[['/about.html','About us','Who builds DhanKhoj'],['/contact.html','Contact &amp; support','Write to us'],['/stories.html','Customer stories','How others found their money'],['/feedback.html','Feedback','Tell us what to improve']])+'<a href="/upgrade.html">Pricing</a>';
  n.addEventListener('click',e=>{const b=e.target.closest('.ddb');document.querySelectorAll('.dd.open').forEach(d=>{if(!b||d!==b.parentElement)d.classList.remove('open')});if(b){const d=b.parentElement;d.classList.toggle('open');b.setAttribute('aria-expanded',d.classList.contains('open'))}});
  document.addEventListener('click',e=>{if(!e.target.closest('.dd'))document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'))});
  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'))});
@@ -79,7 +79,7 @@ window.addEventListener('pageshow',e=>{if(e.persisted)location.reload()});
  const f=document.createElement('footer');f.className='sitefoot';
  f.innerHTML='<div class="wrap"><div class="fcols"><div><a class="fb" href="/"><img src="/favicon.svg" width="30" height="30" alt="">DhanKhoj</a><p>Find the dividends you forgot to collect, before they move to the government fund.</p></div>'+
  '<div><h4>Product</h4><ul><li><a href="/signup.html">Create free account</a></li><li><a href="/upgrade.html">Pricing</a></li><li><a href="/coverage.html">Coverage</a></li><li><a href="/claim.html">How to claim</a></li></ul></div>'+
- '<div><h4>Company</h4><ul><li><a href="/about.html">About us</a></li><li><a href="/contact.html">Contact &amp; support</a></li><li><a href="/feedback.html">Feedback</a></li></ul></div>'+
+ '<div><h4>Company</h4><ul><li><a href="/about.html">About us</a></li><li><a href="/contact.html">Contact &amp; support</a></li><li><a href="/stories.html">Customer stories</a></li><li><a href="/feedback.html">Feedback</a></li></ul></div>'+
  '<div><h4>Legal</h4><ul><li><a href="/terms.html">Terms &amp; refunds</a></li><li><a href="/privacy.html">Privacy notice</a></li></ul></div></div>'+
  '<p class="fdisc">DhanKhoj is an independent information service. It is not affiliated with SEBI, the IEPF Authority, any stock exchange or any company, and it is not investment or legal advice. Matches are estimates from published lists and may be wrong or incomplete; deadlines shown are estimates. Always confirm with the company or its registrar.</p>'+
  '<div class="fbar"><span>&copy; '+new Date().getFullYear()+' DhanKhoj</span><span>Made in India</span></div></div>';
