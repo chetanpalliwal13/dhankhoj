@@ -20,4 +20,27 @@ window.DX_SECTORS=[...new Set(T.map(t=>t[2]))].sort();
 window.dxLoad=function(){const d0=new Date();d0.setHours(0,0,0,0);
  return Promise.resolve(T.map(t=>{const ex=new Date(d0.getTime()+t[10]*864e5);
   return{name:t[0],sym:t[1],sector:t[2],cap:t[3],price:t[4],dps:t[5],yield:Math.round(t[5]/t[4]*10000)/100,years:t[6],payout:t[7],freq:t[8],cagr:t[9],exIn:t[10],ex:ex}}))};
+
+/* ---- richer sample data: price + dividend history per company, built from a fixed seed so it is stable between visits.
+   Real data later: return the same shape from the server (hist: monthly closes oldest->newest, divs: [{y,dps,n}] per year). */
+function rng(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return function(){h+=0x6D2B79F5;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+const FQ={'Annual':1,'Half-yearly':2,'Quarterly':4};
+function build(r){const R=rng(r.sym),N=121,now=new Date(),y0=now.getFullYear();
+ const g=Math.max(.02,Math.min(.24,(r.cagr/100)*.85+.01)),mu=Math.pow(1+g,1/12)-1;
+ const px=new Array(N);px[N-1]=r.price;
+ for(let i=N-2;i>=0;i--){const sh=(R()-.5)*.11;px[i]=Math.max(r.price*.02,px[i+1]/(1+mu+sh*.9))}
+ const n=FQ[r.freq]||1,divs=[],gr=Math.max(.01,r.cagr/100*.7);
+ for(let k=0;k<10;k++){const y=y0-k;const paid=k<Math.min(10,r.years);divs.push({y:y,dps:paid?Math.round(r.dps/Math.pow(1+gr,k)*100)/100:0,n:paid?n:0})}
+ const ret=P=>{const m=P*12,p0=px[N-1-m];if(!p0)return null;const d=divs.slice(0,P).reduce((a,x)=>a+x.dps,0);
+  return{price:(r.price/p0-1)*100,div:d/p0*100,total:((r.price/p0-1)+d/p0)*100,dps:d,pays:divs.slice(0,P).reduce((a,x)=>a+x.n,0)}};
+ const cap={Large:[60000,400000],Mid:[12000,50000],Small:[1500,9000]}[r.cap]||[1000,5000];
+ r.mcap=Math.round(cap[0]+R()*(cap[1]-cap[0]));r.hist=px;r.divs=divs;r.ret={1:ret(1),3:ret(3),5:ret(5),10:ret(10)};
+ r.pays10=divs.reduce((a,x)=>a+x.n,0);r.chg1=r.ret[1].price;r.name_l=(r.name+' '+r.sym).toLowerCase();return r}
+let _all=null;
+const base=window.dxLoad;
+window.dxLoad=function(){return base().then(rows=>{if(!_all){_all=rows.map(build);window.DX_BY={};_all.forEach(r=>window.DX_BY[r.sym]=r)}return _all})};
+window.dxFmt={
+ pct:(v,d)=>(v==null?'–':(v>0?'+':'')+v.toFixed(d==null?1:d)+'%'),pc:(v,d)=>(v==null?'–':v.toFixed(d==null?2:d)+'%'),
+ rs:v=>'₹'+(v>=100?Math.round(v).toLocaleString('en-IN'):v.toFixed(2)),
+ cr:v=>v>=100000?'₹'+(v/100000).toFixed(2)+' lakh cr':'₹'+Math.round(v).toLocaleString('en-IN')+' cr'};
 })();
