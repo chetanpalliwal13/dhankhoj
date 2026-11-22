@@ -352,3 +352,5 @@ html[data-theme=dark] .hform{background:var(--card);border-color:var(--line);box
 .nh{padding-top:22px!important}.nh-g{max-width:1180px;margin:0 auto}
 html[data-theme=dark] .hero-img{border-color:var(--line)}
 .hero-img{margin-top:20px}
+@media(max-width:1100px){.nh-c,.nh-e .nh-c:first-of-type{grid-template-columns:1fr 1fr!important}.nh-e .nh-c:first-of-type a{flex-direction:row;align-items:center}}
+@media(max-width:700px){.nh-c,.nh-e .nh-c:first-of-type{grid-template-columns:1fr!important}.hs{display:none!important}.hsu{padding:9px 14px}.hero-img{margin-left:-4px;margin-right:-4px;border-radius:12px}}
