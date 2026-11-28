@@ -509,3 +509,18 @@ html body .wrap>header.top.top .logo{font-size:0;gap:0}
 html[data-theme=dark] img.lg{content:url(/img/dhankhoj-logo-dark.png)}
 @media(max-width:700px){.logo img.lg{height:40px!important}}
 .fb img.lg{content:url(/img/dhankhoj-logo-dark.png)}
+
+/* language switcher */
+.lsw{display:inline-flex;align-items:center;gap:6px;margin-left:auto;flex:none;color:var(--ink,inherit);position:relative}
+.lsw+.hr,#nav+.lsw+.hr{margin-left:12px}
+.lsw svg{position:absolute;left:10px;pointer-events:none;opacity:.7}
+.lsw select{appearance:none;-webkit-appearance:none;font:inherit;font-size:14px;font-weight:600;color:inherit;background:transparent;border:1px solid var(--line,#d9dee7);border-radius:10px;height:38px;padding:0 12px 0 32px;cursor:pointer}
+.lsw select:focus-visible{outline:2px solid var(--brand,#1a7f5a);outline-offset:2px}
+.lsw option{color:#111;background:#fff}
+html[data-lang]:not([data-lang=en]) body{font-family:Inter,"Noto Sans","Nirmala UI","Noto Sans Devanagari","Noto Sans Bengali","Noto Sans Tamil","Noto Sans Telugu","Noto Sans Kannada","Noto Sans Malayalam","Noto Sans Gurmukhi","Noto Sans Oriya",system-ui,sans-serif;line-height:1.6}
+html[data-lang]:not([data-lang=en]) .hsi,html[data-lang]:not([data-lang=en]) .hsu,html[data-lang]:not([data-lang=en]) button,html[data-lang]:not([data-lang=en]) .btn{white-space:normal}
+@media(max-width:900px){.lsw select{height:34px;font-size:13px;padding-left:28px}.lsw svg{left:8px}}
+
+/* i18n: Indic scripts break when tracked; keep natural shaping */
+html[data-lang]:not([data-lang="en"]) *{letter-spacing:normal !important;word-spacing:normal}
+html[data-lang]:not([data-lang="en"]) nav a, html[data-lang]:not([data-lang="en"]) .nav a{white-space:nowrap}
